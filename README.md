@@ -5,6 +5,7 @@
 - 🎨 [Frontend](#frontend)
 - 🛢️ [Databases](#databases)
 - 🛠️ [Technologies](#technologies)
+- 🖊️ [References](#references)
 
 ## Frontend
 
@@ -139,3 +140,7 @@ See [requirements.txt](requirements.txt) for the full third party packages list.
 **A package for integrating Cloudinary with Django, providing a way to manage media files in the cloud.**
 
 </details>
+
+## References
+
+- [Django REST Framework docs](https://www.django-rest-framework.org/)  
