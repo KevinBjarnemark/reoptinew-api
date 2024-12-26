@@ -57,6 +57,8 @@ INSTALLED_APPS = [
     # Cloud solution for media
     'cloudinary_storage',
     'cloudinary',
+    # Created apps
+    'apps.users',
 ]
 
 MIDDLEWARE = [
@@ -69,6 +71,25 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'error.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    },
+}
+
 
 ROOT_URLCONF = 'config.urls'
 
