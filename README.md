@@ -3,11 +3,37 @@
 ## Table of Contents
 
 - 🎨 [Frontend](#frontend)
+- 🛢️ [Databases](#databases)
 - 🛠️ [Technologies](#technologies)
 
 ## Frontend
 
 The Reoptinew web app uses a decoupled architecture, separating the frontend and backend repositories. The **frontend repository** can be found [**here**](https://github.com/KevinBjarnemark/reoptinew).
+
+## Databases
+
+> ⚠️ **NOTE**  
+> If you need to access the production database locally, you can do so altough it is **strongly discouraged**. Fortunately, since environment variables are managed by Heroku, any accidental changes will be overwritten by Heroku's configuration during deployment. Always restore the `DEVELOPMENT_DATABASE` variable to its original value after making local changes to avoid unintended consequences.
+
+Currently, there are three separate databases that Reoptinew relies on. One for testing, another for development, and another for production. 
+
+- **Testing database**
+
+    - Designed to be a "clean sheet" for running automated tests. It provides a temporary environment where all data exists in memory and is completely erased after the tests finish. This ensures no impact on development or production data during the testing process.
+
+- **Development Database**
+
+    - Intended for local development and debugging. It contains data specific to the development process and is configured to be easily replaceable if needed.
+
+- **Production Database**
+
+    - Stores real user data and operates in a secure, live environment.
+
+### Models
+
+You can find the complete data schema for all models in this [Google Drive folder](https://drive.google.com/drive/folders/1WrPCJ0CRQjOo84iZWGu7mcBEgYjKUaZA?usp=sharing). 
+
+![Post model](docs/assets/iteration_1/post_model.webp "A spreadsheet of the post model.")
 
 ## Technologies
 
@@ -113,4 +139,3 @@ See [requirements.txt](requirements.txt) for the full third party packages list.
 **A package for integrating Cloudinary with Django, providing a way to manage media files in the cloud.**
 
 </details>
-
