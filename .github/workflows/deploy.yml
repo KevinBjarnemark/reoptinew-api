@@ -1,0 +1,56 @@
+name: Test and Deploy
+
+on:
+  push:
+    tags:
+      - 'v*'  # Run tests and deploy only on version tags
+  workflow_dispatch:
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+      CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DEVELOPMENT_DATABASE_URL: ${{ secrets.DEVELOPMENT_DATABASE_URL }}
+      DJANGO_DEBUG: ${{ secrets.DJANGO_DEBUG }}
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          # Ensure everything is fetched
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12.7'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Django tests
+        run: pytest
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings
+          # Override DATABASE_URL during tests
+          DATABASE_URL: "sqlite:///:memory:" 
+
+      - name: Authenticate with Heroku
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          echo "machine api.heroku.com login $HEROKU_API_KEY password $HEROKU_API_KEY" > ~/.netrc
+          echo "machine git.heroku.com login $HEROKU_API_KEY password $HEROKU_API_KEY" >> ~/.netrc
+          chmod 600 ~/.netrc
+
+      - name: Add Heroku Remote
+        run: heroku git:remote -a reoptinew-api
+
+      - name: Deploy to Heroku
+        if: ${{ github.ref_type == 'tag' || github.event_name == 'workflow_dispatch' }}
+        run: git push heroku HEAD:refs/heads/main -f
