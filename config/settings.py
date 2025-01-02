@@ -29,12 +29,17 @@ ALLOWED_HOSTS = [
     '127.0.0.1'
 ]
 
-# Allow localhost:5173 (Frontend)
+
 if DEBUG:
+    # Allow localhost:5173 in development
     CORS_ALLOWED_ORIGINS = [
         "http://localhost:5173",
     ]
-# TODO else: production URL here!
+else:
+    # Allow the deployed frontend in production
+    CORS_ALLOWED_ORIGINS = [
+        "https://reoptinew-09d333f23d8e.herokuapp.com",
+    ]
 
 # Allow all HTTP methods
 CORS_ALLOW_METHODS = [
