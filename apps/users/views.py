@@ -6,12 +6,21 @@ from static.py.utils.error_handling import throw_error
 from django.contrib.auth import login, authenticate
 from static.py.utils.logging_config import logger
 from rest_framework.parsers import MultiPartParser
+from rest_framework.permissions import (
+    DjangoModelPermissionsOrAnonReadOnly,
+    AllowAny
+)
 
 
 class Profile(APIView):
     """Returns a profile based on the primary key"""
     # Only allow GET requests
+    permission_classes = [DjangoModelPermissionsOrAnonReadOnly]
     http_method_names = ['get']
+    serializer_class = ProfileSerializer
+
+    def get_queryset(self):
+        return ProfileModel.objects.all()
 
     def get(self, request, pk):
         try:
@@ -41,10 +50,13 @@ class SignUp(APIView):
     """
     Registers a user account with username and password.
     """
+
+    permission_classes = [AllowAny]
     # Only allow POST requests
     http_method_names = ['post']
     # Enable multipart form-data parsing for images
     parser_classes = [MultiPartParser]
+    serializer_class = SignUpSerializer
 
     def post(self, request):
         try:

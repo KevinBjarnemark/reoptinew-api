@@ -1,13 +1,20 @@
 from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import User
 from cloudinary.models import CloudinaryField
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from django.contrib.auth.models import AbstractUser
+
+
+# Custom user
+class User(AbstractUser):
+    pass
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE
+    )
     birth_date = models.DateTimeField(null=True, blank=True)
     if settings.DEBUG:
         image = models.ImageField(
