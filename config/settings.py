@@ -24,31 +24,27 @@ DEVELOPMENT_DATABASE = config('DEVELOPMENT_DATABASE', default=False, cast=bool)
 cloudinary.config(secure=True)  # Enforce secure connections
 CLOUDINARY_URL = config('CLOUDINARY_URL')
 
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1'
-]
-
-
 if DEBUG:
-    # Allow localhost:5173 in development
-    CORS_ALLOWED_ORIGINS = [
-        "http://localhost:5173",
-    ]
+    # Allow localhost in development
+    CORS_ALLOWED_ORIGINS = ['http://localhost:5173']
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 else:
     # Allow the deployed frontend in production
     CORS_ALLOWED_ORIGINS = [
-        "https://reoptinew-09d333f23d8e.herokuapp.com",
+        'https://reoptinew-09d333f23d8e.herokuapp.com',
+    ]
+    ALLOWED_HOSTS = [
+        'reoptinew-api-c16dc2520739.herokuapp.com'
     ]
 
 # Allow all HTTP methods
 CORS_ALLOW_METHODS = [
-    "GET",
-    "POST",
-    "PUT",
-    "PATCH",
-    "DELETE",
-    "OPTIONS",
+    'GET',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+    'OPTIONS',
 ]
 
 LOGIN_REDIRECT_URL = '/'
