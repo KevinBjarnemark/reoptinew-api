@@ -28,18 +28,36 @@ class SignUpSerializer(serializers.ModelSerializer):
         fields = ['username', 'password1', 'password2', 'birth_date', 'image']
 
     def validate(self, data):
+        request = self.context.get('request')
+
         # Check if passwords match
         if data['password1'] != data['password2']:
             raise serializers.ValidationError(
                 {"password": "Passwords do not match."}
             )
+
+        # Access the image from request.FILES
+        request = self.context.get('request')
+        image = request.FILES.get('image', None)
+        # Validate image file type
+        if image:
+            valid_extensions = ['jpg', 'jpeg', 'png', 'webp']
+            extension = image.name.split('.')[-1].lower()
+            if extension not in valid_extensions:
+                raise serializers.ValidationError(
+                    {"image": "Invalid file type."}
+                )
+
         return data
 
     def create(self, validated_data):
         # Remove the second password
         validated_data.pop('password2')
         birth_date = validated_data.pop('birth_date', None)
-        image = validated_data.pop('image', None)
+
+        # Access the image from request.FILES
+        request = self.context.get('request')
+        image = request.FILES.get('image', None)
 
         # Create the user instance
         user = User.objects.create_user(
@@ -48,6 +66,10 @@ class SignUpSerializer(serializers.ModelSerializer):
         )
 
         # Create profile linked to the user
-        Profile.objects.create(user=user, birth_date=birth_date, image=image)
+        Profile.objects.create(
+            user=user,
+            birth_date=birth_date,
+            image=image,
+        )
 
         return user

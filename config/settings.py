@@ -24,6 +24,9 @@ DEVELOPMENT_DATABASE = config('DEVELOPMENT_DATABASE', default=False, cast=bool)
 cloudinary.config(secure=True)  # Enforce secure connections
 CLOUDINARY_URL = config('CLOUDINARY_URL')
 
+# Enable or disable all debug logs executed by static/py/utils/logging.py.
+SHOW_ALL_LOGS = config("SHOW_ALL_LOGS", default=False, cast=bool)
+
 if DEBUG:
     # Allow localhost in development
     CORS_ALLOWED_ORIGINS = ['http://localhost:5173']
@@ -93,7 +96,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
+            'format': '{levelname} {asctime} {message}',
             'style': '{',
         },
         'simple': {

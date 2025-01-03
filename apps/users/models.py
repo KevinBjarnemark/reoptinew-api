@@ -4,6 +4,7 @@ from cloudinary.models import CloudinaryField
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import AbstractUser
+from static.py.utils.environment import is_development
 
 
 # Custom user
@@ -16,7 +17,7 @@ class Profile(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE
     )
     birth_date = models.DateTimeField(null=True, blank=True)
-    if settings.DEBUG:
+    if is_development():
         image = models.ImageField(
             upload_to='profile_images/', blank=True, null=True
         )

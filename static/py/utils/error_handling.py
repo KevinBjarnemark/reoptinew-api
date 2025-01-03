@@ -1,6 +1,7 @@
 
-from .logging_config import logger
+from .logging import logger
 from rest_framework.response import Response
+from static.py.utils.inspect_stack import get_file_name_of_caller
 
 
 def throw_error(status_code, error_message, log=None, error_details=None):
@@ -22,7 +23,17 @@ def throw_error(status_code, error_message, log=None, error_details=None):
         Response: DRF Response object with error data.
     """
     if log:
-        logger.error(log)
+        # Get the file name of the caller
+        caller_file = get_file_name_of_caller(2)
+        occurred_in = f"(Occurred in {caller_file} by throw_error()) "
+        logger.error(
+            f"{occurred_in} {{"
+            f"  'status_code': {status_code},"
+            f"  'error_message': '{error_message}',"
+            f"  'log': '{log}',"
+            f"  'error_details': {error_details},"
+            f"}}"
+        )
 
     error_response = {"error_message": error_message}
     if error_details:

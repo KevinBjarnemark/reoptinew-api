@@ -4,12 +4,12 @@ from .models import Profile as ProfileModel
 from .serializers import ProfileSerializer, SignUpSerializer
 from static.py.utils.error_handling import throw_error
 from django.contrib.auth import login, authenticate
-from static.py.utils.logging_config import logger
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import (
     DjangoModelPermissionsOrAnonReadOnly,
     AllowAny
 )
+from static.py.utils.logging import log_debug
 
 
 class Profile(APIView):
@@ -59,9 +59,13 @@ class SignUp(APIView):
     serializer_class = SignUpSerializer
 
     def post(self, request):
+        showDebugging = True
         try:
             # Serialize incoming data
-            serializer = SignUpSerializer(data=request.data)
+            serializer = SignUpSerializer(
+                data=request.data,
+                context={'request': request}
+            )
             if not serializer.is_valid():
                 return throw_error(
                     400,
@@ -71,23 +75,25 @@ class SignUp(APIView):
                 )
             # Save the user instance
             user = serializer.save()
-            logger.debug(f"User created: {user.username}")
+            log_debug(showDebugging, "User created", user.username)
             # Authenticate and log in the user
             username = user.username
             password = request.data['password1']
-            logger.debug(f"Authenticating user: {username}")
+            log_debug(showDebugging, "Authenticating user", username)
             user = authenticate(username=username, password=password)
             # Handle failed authentication
             if user is None:
-                logger.debug("Authentication failed.")
+                log_debug(showDebugging, "Authentication failed.", "")
                 return throw_error(
                     401,
                     "Authentication failed.",
                     log="User could not be authenticated after registration."
                 )
-            logger.debug(f"Logging in user: {username}")
+            log_debug(showDebugging, "Logging in user", username)
             login(request, user)
-
+            log_debug(
+                showDebugging, "Account successfully registered", username
+            )
             # Return a successful response
             return Response(
                 {"message": "Account successfully registered."}, status=201
