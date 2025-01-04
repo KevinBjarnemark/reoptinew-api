@@ -3,13 +3,50 @@ from rest_framework.response import Response
 from .models import Profile as ProfileModel
 from .serializers import ProfileSerializer, SignUpSerializer
 from static.py.utils.error_handling import throw_error
-from django.contrib.auth import login, authenticate
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import (
     DjangoModelPermissionsOrAnonReadOnly,
-    AllowAny
+    AllowAny,
+    IsAuthenticated
 )
 from static.py.utils.logging import log_debug
+from rest_framework_simplejwt.tokens import RefreshToken
+
+
+class UserProfile(APIView):
+    # Only allow GET requests
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get']
+    serializer_class = ProfileSerializer
+
+    def get_queryset(self):
+        return ProfileModel.objects.all()
+
+    def get(self, request):
+        try:
+            # Get the profile by primary key
+            profile = ProfileModel.objects.get(user=request.user)
+            # Serialize fields
+            serializer = ProfileSerializer(
+                profile,
+                context={'request': request}
+            )
+            # Return the profile
+            return Response(serializer.data, status=200)
+        # Handle profile doens't exist
+        except ProfileModel.DoesNotExist:
+            return throw_error(
+                404,
+                "Profile not found.",
+                log=f"Profile not found for user ID: {request.user}"
+            )
+        # Handle unexpected errors
+        except Exception as e:
+            return throw_error(
+                500,
+                "Something went wrong.",
+                log=f"Unhandled exception: {str(e)}"
+            )
 
 
 class Profile(APIView):
@@ -27,7 +64,10 @@ class Profile(APIView):
             # Get the profile by primary key
             profile = ProfileModel.objects.get(pk=pk)
             # Serialize fields
-            serializer = ProfileSerializer(profile)
+            serializer = ProfileSerializer(
+                profile,
+                context={'request': request}
+            )
             # Return the profile
             return Response(serializer.data, status=200)
         # Handle profile doens't exist
@@ -76,28 +116,15 @@ class SignUp(APIView):
             # Save the user instance
             user = serializer.save()
             log_debug(showDebugging, "User created", user.username)
-            # Authenticate and log in the user
-            username = user.username
-            password = request.data['password1']
-            log_debug(showDebugging, "Authenticating user", username)
-            user = authenticate(username=username, password=password)
-            # Handle failed authentication
-            if user is None:
-                log_debug(showDebugging, "Authentication failed.", "")
-                return throw_error(
-                    401,
-                    "Authentication failed.",
-                    log="User could not be authenticated after registration."
-                )
-            log_debug(showDebugging, "Logging in user", username)
-            login(request, user)
-            log_debug(
-                showDebugging, "Account successfully registered", username
-            )
-            # Return a successful response
-            return Response(
-                {"message": "Account successfully registered."}, status=201
-            )
+
+            # Generate JWT tokens
+            refresh_token = RefreshToken.for_user(user)
+            # Return a successful response with token
+            return Response({
+                "message": "Account successfully registered.",
+                "refresh": str(refresh_token),
+                "access": str(refresh_token.access_token)
+            }, status=201)
         # Handle unexpected errors
         except Exception as e:
             return throw_error(

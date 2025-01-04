@@ -15,6 +15,14 @@ class ProfileSerializer(serializers.ModelSerializer):
             'id', 'birth_date', 'image', "username",
         ]
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        # Remove birth_date if the user is not the owner
+        request = self.context.get('request')
+        if request.user != instance.user:
+            representation.pop('birth_date', None)
+        return representation
+
 
 class SignUpSerializer(serializers.ModelSerializer):
     username = serializers.CharField(required=True)
