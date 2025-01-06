@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Profile as ProfileModel
-from .serializers import ProfileSerializer, SignUpSerializer
+from .serializers import ProfileSerializer, SignUpSerializer, LogInSerializer
 from static.py.utils.error_handling import throw_error
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import (
@@ -130,5 +130,92 @@ class SignUp(APIView):
             return throw_error(
                 500,
                 "Something went wrong during account registration.",
+                log=f"Unhandled exception: {str(e)}"
+            )
+
+
+class LogIn(APIView):
+    """
+    Registers a user account with username and password.
+    """
+
+    permission_classes = [AllowAny]
+    # Only allow POST requests
+    http_method_names = ['post']
+    # Enable multipart form-data parsing for images
+    parser_classes = [MultiPartParser]
+    serializer_class = LogInSerializer
+
+    def post(self, request):
+        showDebugging = True
+        try:
+            # Serialize incoming data
+            serializer = LogInSerializer(data=request.data)
+            if not serializer.is_valid():
+                return throw_error(
+                    400,
+                    "Validation failed.",
+                    log=f"Validation errors: {serializer.errors}",
+                    error_details=serializer.errors
+                )
+            user = serializer.validated_data['user']
+            log_debug(showDebugging, "User authenticated", user.username)
+
+            # Generate JWT tokens
+            refresh_token = RefreshToken.for_user(user)
+            # Return a successful response with token
+            return Response({
+                "message": "Login successful.",
+                "refresh": str(refresh_token),
+                "access": str(refresh_token.access_token)
+            }, status=201)
+        # Handle unexpected errors
+        except Exception as e:
+            return throw_error(
+                500,
+                "Something went wrong during login.",
+                log=f"Unhandled exception: {str(e)}"
+            )
+
+
+class LogOut(APIView):
+    """
+    Logs out the user by blacklisting their refresh token.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        showDebugging = True
+        try:
+            log_debug(showDebugging, "Logging out user", "")
+            # Extract the refresh token from the request
+            refresh_token = request.data.get("refresh")
+            if not refresh_token:
+                return throw_error(
+                    400,
+                    "Invalid token",
+                    log=f"Invalid token: {str(refresh_token)}"
+                )
+            log_debug(showDebugging, "Received refresh token ", refresh_token)
+
+            # Blacklist the refresh token
+            try:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            except Exception as e:
+                return throw_error(
+                    400,
+                    "Log out failed",
+                    log=f"Token blacklisting failed: {str(e)}"
+                )
+
+            return Response(
+                {"message": "Successfully logged out."}, status=200
+            )
+        except Exception as e:
+            return throw_error(
+                500,
+                "Something went wrong during logout.",
                 log=f"Unhandled exception: {str(e)}"
             )

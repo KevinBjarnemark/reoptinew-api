@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Profile
 from django.contrib.auth import get_user_model
+from django.contrib.auth import authenticate
 
 # Securely hash passwords before storing in database
 User = get_user_model()
@@ -36,8 +37,6 @@ class SignUpSerializer(serializers.ModelSerializer):
         fields = ['username', 'password1', 'password2', 'birth_date', 'image']
 
     def validate(self, data):
-        request = self.context.get('request')
-
         # Check if passwords match
         if data['password1'] != data['password2']:
             raise serializers.ValidationError(
@@ -81,3 +80,21 @@ class SignUpSerializer(serializers.ModelSerializer):
         )
 
         return user
+
+
+class LogInSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(required=True)
+    password = serializers.CharField(required=True, write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'password']
+
+    def validate(self, data):
+        user = authenticate(
+            username=data['username'], password=data['password']
+        )
+        if not user:
+            raise serializers.ValidationError("Invalid credentials.")
+        data['user'] = user
+        return data

@@ -1,5 +1,7 @@
 # Reoptinew API
 
+**Navigate to the deployed API** [here](https://reoptinew-api-c16dc2520739.herokuapp.com/) 🔥
+
 ## Table of Contents
 
 - 🎨 [Frontend](#frontend)
@@ -72,6 +74,19 @@ See [requirements.txt](requirements.txt) for the full third party packages list.
 
 </details>
 
+### Authentication
+
+<details>
+    <summary>
+        PyJWT
+    </summary>
+
+**A Python library for JSON Web Tokens (JWT).**
+
+PyJWT is a library for encoding and decoding JSON Web Tokens. It supports token signing and validation using various algorithms.
+
+</details>
+
 ### Cloud services
 
 <details>
@@ -80,6 +95,19 @@ See [requirements.txt](requirements.txt) for the full third party packages list.
     </summary>
 
 **A cloud-based service for managing, storing, and delivering media assets like images and videos.**
+
+</details>
+
+### Testing
+
+<details>
+    <summary>
+        Pytest
+    </summary>
+
+**A testing framework for Python applications.**
+
+Pytest is a framework used for writing and running tests in Python. It supports features like fixtures, parameterized tests.
 
 </details>
 
