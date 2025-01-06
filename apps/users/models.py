@@ -45,7 +45,7 @@ class Profile(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE
     )
-    birth_date = models.DateTimeField()  # Required
+    birth_date = models.DateField()  # Required
     if is_development():
         image = models.ImageField(
             upload_to='profile_images/', blank=True, null=True
