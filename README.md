@@ -6,6 +6,7 @@
 
 - 🎨 [Frontend](#frontend)
 - 🛢️ [Databases](#databases)
+- ❌ [Error handling](#error-handling)
 - 🛠️ [Technologies](#technologies)
 - 🖊️ [References](#references)
 
@@ -37,6 +38,38 @@ Currently, there are three separate databases that Reoptinew relies on. One for 
 You can find the complete data schema for all models in this [Google Drive folder](https://drive.google.com/drive/folders/1WrPCJ0CRQjOo84iZWGu7mcBEgYjKUaZA?usp=sharing). 
 
 ![Post model](docs/assets/iteration_1/post_model.webp "A spreadsheet of the post model.")
+
+## Error Handling
+
+Reoptinew’s error-handling system is built on three core principles: user experience, security, and troubleshooting.
+
+### User Experience
+
+The backend ensures that all errors sent to the frontend are clear, user-friendly, and meaningful. Error messages are mapped to custom messages that align with Reoptinew’s branding and interface standards. 
+
+For additional UX details, visit the [**frontend repository**](https://github.com/KevinBjarnemark/reoptinew).
+
+### Security
+
+Reoptinew prioritizes security by implementing a **controlled error system** to eliminate risks associated with exposing raw backend data. 
+
+Key benefits of this system include:
+
+1. **Thorough Validation:**   
+    Every piece of information sent to the client is inspected and sanitized.
+
+2. **Backend Logic Protection:**  
+    While Reoptinew's backend logic is open-source and fully transparent, the system ensures that runtime details, such as stack traces or low-level error messages, are not exposed to the frontend.
+
+3. **Resilience Against Updates:**  
+    Controlled error handling mitigates risks of application failures caused by changes in dependencies or library updates.
+
+### Troubleshooting, Performance, and Logging
+
+Printing to the console with `print()` in production is discouraged due to potential security and performance risks. Reoptinew instead relies on a custom logging system [logging.py](static/py/utils/logging.py) to ensure clarity, consistency, and controlled output.
+
+- **Detailed Logs:**  
+The [throw_error()](static/py/utils/error_handling.py) function captures all errors with contextual metadata, such as the file and function where the error occurred.
 
 ## Technologies
 
@@ -171,4 +204,8 @@ Pytest is a framework used for writing and running tests in Python. It supports 
 
 ## References
 
-- [Django REST Framework docs](https://www.django-rest-framework.org/)  
+It's worth mentioning **source code references**. These references can be found in the project itself, particularly in the `venv` folder (if you're using a virtual environment). 
+
+- For example, during the implementation of the error handling system, classes from `Lib/site-packages/rest_framework/fields.py` helped with gaining a deeper understanding of the underlying processes within the Django Rest Framework.
+
+- [Django REST Framework docs](https://www.django-rest-framework.org/)
