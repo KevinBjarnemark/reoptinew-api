@@ -1,6 +1,5 @@
-
-import inspect
 import os
+import inspect
 
 
 def get_file_name_of_caller(level):

@@ -1,16 +1,16 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from .models import Profile as ProfileModel
-from .serializers import ProfileSerializer, SignUpSerializer, LogInSerializer
 from static.py.utils.error_handling import throw_error
+from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
+from rest_framework.response import Response
 from rest_framework.permissions import (
     DjangoModelPermissionsOrAnonReadOnly,
     AllowAny,
-    IsAuthenticated
+    IsAuthenticated,
 )
-from static.py.utils.logging import log_debug
 from rest_framework_simplejwt.tokens import RefreshToken
+from static.py.utils.logging import log_debug
+from .models import Profile as ProfileModel
+from .serializers import ProfileSerializer, SignUpSerializer, LogInSerializer
 
 
 class UserProfile(APIView):
@@ -28,8 +28,7 @@ class UserProfile(APIView):
             profile = ProfileModel.objects.get(user=request.user)
             # Serialize fields
             serializer = ProfileSerializer(
-                profile,
-                context={'request': request}
+                profile, context={'request': request}
             )
             # Return the profile
             return Response(serializer.data, status=200)
@@ -38,19 +37,20 @@ class UserProfile(APIView):
             return throw_error(
                 404,
                 "Profile not found.",
-                log=f"Profile not found for user ID: {request.user}"
+                log=f"Profile not found for user ID: {request.user}",
             )
         # Handle unexpected errors
         except Exception as e:
             return throw_error(
                 500,
                 "Something went wrong.",
-                log=f"Unhandled exception: {str(e)}"
+                log=f"Unhandled exception: {str(e)}",
             )
 
 
 class Profile(APIView):
     """Returns a profile based on the primary key"""
+
     # Only allow GET requests
     permission_classes = [DjangoModelPermissionsOrAnonReadOnly]
     http_method_names = ['get']
@@ -65,8 +65,7 @@ class Profile(APIView):
             profile = ProfileModel.objects.get(pk=pk)
             # Serialize fields
             serializer = ProfileSerializer(
-                profile,
-                context={'request': request}
+                profile, context={'request': request}
             )
             # Return the profile
             return Response(serializer.data, status=200)
@@ -75,14 +74,14 @@ class Profile(APIView):
             return throw_error(
                 404,
                 "Profile not found.",
-                log=f"Profile not found for user ID: {pk}"
+                log=f"Profile not found for user ID: {pk}",
             )
         # Handle unexpected errors
         except Exception as e:
             return throw_error(
                 500,
                 "Something went wrong.",
-                log=f"Unhandled exception: {str(e)}"
+                log=f"Unhandled exception: {str(e)}",
             )
 
 
@@ -99,38 +98,40 @@ class SignUp(APIView):
     serializer_class = SignUpSerializer
 
     def post(self, request):
-        showDebugging = True
+        show_debugging = True
         try:
             # Serialize incoming data
             serializer = SignUpSerializer(
-                data=request.data,
-                context={'request': request}
+                data=request.data, context={'request': request}
             )
             if not serializer.is_valid():
                 return throw_error(
                     400,
                     "Validation failed.",
                     log=f"Validation errors: {serializer.errors}",
-                    error_details=serializer.errors
+                    error_details=serializer.errors,
                 )
             # Save the user instance
             user = serializer.save()
-            log_debug(showDebugging, "User created", user.username)
+            log_debug(show_debugging, "User created", user.username)
 
             # Generate JWT tokens
             refresh_token = RefreshToken.for_user(user)
             # Return a successful response with token
-            return Response({
-                "message": "Account successfully registered.",
-                "refresh": str(refresh_token),
-                "access": str(refresh_token.access_token)
-            }, status=201)
+            return Response(
+                {
+                    "message": "Account successfully registered.",
+                    "refresh": str(refresh_token),
+                    "access": str(refresh_token.access_token),
+                },
+                status=201,
+            )
         # Handle unexpected errors
         except Exception as e:
             return throw_error(
                 500,
                 "Something went wrong during account registration.",
-                log=f"Unhandled exception: {str(e)}"
+                log=f"Unhandled exception: {str(e)}",
             )
 
 
@@ -147,7 +148,7 @@ class LogIn(APIView):
     serializer_class = LogInSerializer
 
     def post(self, request):
-        showDebugging = True
+        show_debugging = True
         try:
             # Serialize incoming data
             serializer = LogInSerializer(data=request.data)
@@ -156,25 +157,28 @@ class LogIn(APIView):
                     400,
                     "Validation failed.",
                     log=f"Validation errors: {serializer.errors}",
-                    error_details=serializer.errors
+                    error_details=serializer.errors,
                 )
             user = serializer.validated_data['user']
-            log_debug(showDebugging, "User authenticated", user.username)
+            log_debug(show_debugging, "User authenticated", user.username)
 
             # Generate JWT tokens
             refresh_token = RefreshToken.for_user(user)
             # Return a successful response with token
-            return Response({
-                "message": "Login successful.",
-                "refresh": str(refresh_token),
-                "access": str(refresh_token.access_token)
-            }, status=201)
+            return Response(
+                {
+                    "message": "Login successful.",
+                    "refresh": str(refresh_token),
+                    "access": str(refresh_token.access_token),
+                },
+                status=201,
+            )
         # Handle unexpected errors
         except Exception as e:
             return throw_error(
                 500,
                 "Something went wrong during login.",
-                log=f"Unhandled exception: {str(e)}"
+                log=f"Unhandled exception: {str(e)}",
             )
 
 
@@ -186,18 +190,18 @@ class LogOut(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        showDebugging = True
+        show_debugging = True
         try:
-            log_debug(showDebugging, "Logging out user", "")
+            log_debug(show_debugging, "Logging out user", "")
             # Extract the refresh token from the request
             refresh_token = request.data.get("refresh")
             if not refresh_token:
                 return throw_error(
                     400,
                     "Invalid token",
-                    log=f"Invalid token: {str(refresh_token)}"
+                    log=f"Invalid token: {str(refresh_token)}",
                 )
-            log_debug(showDebugging, "Received refresh token ", refresh_token)
+            log_debug(show_debugging, "Received refresh token ", refresh_token)
 
             # Blacklist the refresh token
             try:
@@ -207,7 +211,7 @@ class LogOut(APIView):
                 return throw_error(
                     400,
                     "Log out failed",
-                    log=f"Token blacklisting failed: {str(e)}"
+                    log=f"Token blacklisting failed: {str(e)}",
                 )
 
             return Response(
@@ -217,5 +221,5 @@ class LogOut(APIView):
             return throw_error(
                 500,
                 "Something went wrong during logout.",
-                log=f"Unhandled exception: {str(e)}"
+                log=f"Unhandled exception: {str(e)}",
             )

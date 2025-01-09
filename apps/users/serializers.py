@@ -1,8 +1,9 @@
 from rest_framework import serializers
-from .models import Profile
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
 from .constants import VALIDATION_RULES
+from .models import Profile
+
 
 # Securely hash passwords before storing in database
 User = get_user_model()
@@ -14,7 +15,10 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = [
-            'id', 'birth_date', 'image', "username",
+            'id',
+            'birth_date',
+            'image',
+            "username",
         ]
 
     def to_representation(self, instance):
@@ -50,26 +54,24 @@ class SignUpSerializer(serializers.ModelSerializer):
             'password',
             'confirm_password',
             'birth_date',
-            'image'
+            'image',
         ]
 
     # Overwrite default error messages with custom errors
     def __init__(self, *args, **kwargs):
         super(SignUpSerializer, self).__init__(*args, **kwargs)
-        self.fields['username'].error_messages['required'] = (
-            'You must enter a username.'
-        )
-        self.fields['username'].error_messages['blank'] = (
-            'Username is missing.'
-        )
+        self.fields['username'].error_messages[
+            'required'
+        ] = 'You must enter a username.'
+        self.fields['username'].error_messages[
+            'blank'
+        ] = 'Username is missing.'
 
     def validate(self, data):
         # Check if username already exists
         if User.objects.filter(username=data["username"]).exists():
             raise serializers.ValidationError(
-                {
-                    "username": "This username is already taken."
-                }
+                {"username": "This username is already taken."}
             )
         # Check if passwords match
         if data['password'] != data['confirm_password']:

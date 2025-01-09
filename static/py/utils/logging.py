@@ -1,8 +1,9 @@
 
 import logging
+from django.conf import settings
 from static.py.utils.environment import is_development
 from static.py.utils.inspect_stack import get_file_name_of_caller
-from django.conf import settings
+
 
 logger = logging.getLogger("app")
 

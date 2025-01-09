@@ -1,7 +1,6 @@
-
-from .logging import logger
 from rest_framework.response import Response
 from static.py.utils.inspect_stack import get_file_name_of_caller
+from .logging import logger
 
 
 def throw_error(status_code, error_message, log=None, error_details=None):
@@ -44,8 +43,7 @@ def throw_error(status_code, error_message, log=None, error_details=None):
                 sanitized_messages.append(msg)
                 if log:
                     logger.debug(
-                        "Appending custom error --> " +
-                        f"{field}: '{msg}'"
+                        "Appending custom error --> " + f"{field}: '{msg}'"
                     )
                 sanitized_errors[field] = sanitized_messages
         return sanitized_errors

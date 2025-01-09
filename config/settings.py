@@ -1,13 +1,13 @@
-
+import os
+import sys
+from datetime import timedelta
 from pathlib import Path
 from decouple import config
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
-import sys
 import dj_database_url
-import os
-from datetime import timedelta
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,9 +37,7 @@ else:
     CORS_ALLOWED_ORIGINS = [
         'https://reoptinew-09d333f23d8e.herokuapp.com',
     ]
-    ALLOWED_HOSTS = [
-        'reoptinew-api-c16dc2520739.herokuapp.com'
-    ]
+    ALLOWED_HOSTS = ['reoptinew-api-c16dc2520739.herokuapp.com']
 
 # Allow all HTTP methods
 CORS_ALLOW_METHODS = [
@@ -61,7 +59,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
         'rest_framework.permissions.IsAuthenticated',
-    ]
+    ],
 }
 
 SIMPLE_JWT = {
@@ -213,9 +211,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': (
-            'django.contrib.auth.password_validation.'
-            'MinimumLengthValidator'
-            ),
+            'django.contrib.auth.password_validation.' 'MinimumLengthValidator'
+        ),
     },
     {
         'NAME': (

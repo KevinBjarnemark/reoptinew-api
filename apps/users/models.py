@@ -20,7 +20,6 @@ class User(AbstractUser):
         AbstractUser: Provides default fields like username,
         email, and password.
     """
-    pass
 
 
 class Profile(models.Model):
