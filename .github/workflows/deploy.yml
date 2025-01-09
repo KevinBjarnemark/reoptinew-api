@@ -47,6 +47,10 @@ jobs:
           echo "machine api.heroku.com login $HEROKU_API_KEY password $HEROKU_API_KEY" > ~/.netrc
           echo "machine git.heroku.com login $HEROKU_API_KEY password $HEROKU_API_KEY" >> ~/.netrc
           chmod 600 ~/.netrc
+        
+      - name: Install Heroku CLI
+        run: |
+          curl https://cli-assets.heroku.com/install.sh | sh
 
       - name: Add Heroku Remote
         run: heroku git:remote -a reoptinew-api
