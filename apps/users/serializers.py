@@ -27,40 +27,54 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 
 class SignUpSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(required=True)
-    password1 = serializers.CharField(required=True, write_only=True)
-    password2 = serializers.CharField(required=True, write_only=True)
+    username = serializers.CharField(required=True, min_length=3)
+    password = serializers.CharField(
+        required=True,
+        write_only=True,
+        min_length=VALIDATION_RULES["PASSWORD"]["MIN_LENGTH"],
+        max_length=VALIDATION_RULES["PASSWORD"]["MAX_LENGTH"],
+    )
+    confirm_password = serializers.CharField(
+        required=True,
+        write_only=True,
+        min_length=VALIDATION_RULES["PASSWORD"]["MIN_LENGTH"],
+        max_length=VALIDATION_RULES["PASSWORD"]["MAX_LENGTH"],
+    )
     birth_date = serializers.DateField(required=True)
     image = serializers.ImageField(required=False)
 
     class Meta:
         model = User
-        fields = ['username', 'password1', 'password2', 'birth_date', 'image']
+        fields = [
+            'username',
+            'password',
+            'confirm_password',
+            'birth_date',
+            'image'
+        ]
+
+    # Overwrite default error messages with custom errors
+    def __init__(self, *args, **kwargs):
+        super(SignUpSerializer, self).__init__(*args, **kwargs)
+        self.fields['username'].error_messages['required'] = (
+            'You must enter a username.'
+        )
+        self.fields['username'].error_messages['blank'] = (
+            'Username is missing.'
+        )
 
     def validate(self, data):
-        # Check if passwords match
-        if data['password1'] != data['password2']:
-            raise serializers.ValidationError(
-                {"password": "[CUSTOM] Passwords do not match."}
-            )
-        # Check minimum password length
-        if len(data['password1']) < VALIDATION_RULES["PASSWORD"]["MIN_LENGTH"]:
-            raise serializers.ValidationError(
-                {
-                    "password": (
-                        "[CUSTOM] Password must be at least " +
-                        f"{VALIDATION_RULES["PASSWORD"]["MIN_LENGTH"]} " +
-                        "characters long."
-                    )
-                }
-            )
-
         # Check if username already exists
         if User.objects.filter(username=data["username"]).exists():
             raise serializers.ValidationError(
                 {
-                    "username": "[CUSTOM] This username is already taken."
+                    "username": "This username is already taken."
                 }
+            )
+        # Check if passwords match
+        if data['password'] != data['confirm_password']:
+            raise serializers.ValidationError(
+                {"password": "Passwords do not match."}
             )
 
         # Access the image from request.FILES
@@ -72,14 +86,14 @@ class SignUpSerializer(serializers.ModelSerializer):
             extension = image.name.split('.')[-1].lower()
             if extension not in valid_extensions:
                 raise serializers.ValidationError(
-                    {"image": "[CUSTOM] Invalid file type."}
+                    {"image": "Invalid file type."}
                 )
 
         return data
 
     def create(self, validated_data):
         # Remove the second password
-        validated_data.pop('password2')
+        validated_data.pop('confirm_password')
         birth_date = validated_data.pop('birth_date', None)
 
         # Access the image from request.FILES
@@ -89,7 +103,7 @@ class SignUpSerializer(serializers.ModelSerializer):
         # Create the user instance
         user = User.objects.create_user(
             username=validated_data['username'],
-            password=validated_data['password1'],
+            password=validated_data['password'],
         )
 
         # Create profile linked to the user
@@ -115,6 +129,6 @@ class LogInSerializer(serializers.ModelSerializer):
             username=data['username'], password=data['password']
         )
         if not user:
-            raise serializers.ValidationError("[CUSTOM] Invalid credentials.")
+            raise serializers.ValidationError("Invalid credentials.")
         data['user'] = user
         return data

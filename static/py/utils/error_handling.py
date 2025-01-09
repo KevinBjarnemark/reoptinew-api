@@ -6,11 +6,9 @@ from static.py.utils.inspect_stack import get_file_name_of_caller
 
 def throw_error(status_code, error_message, log=None, error_details=None):
     """
-    Throws customized errors in a minimalistic and clean way. Used
-    for sending error messages to the frontend customized for user
-    experience, while minimizing exposure of backend logic. It also
-    allows optional logging for debugging purposes and supports detailed
-    error reporting when needed.
+    Builds a dictionary designed to provide a seamless experience when
+    sent to the frontend. It also allows optional logging for debugging
+    purposes and supports detailed error reporting when needed.
 
     Args:
         status_code (int): HTTP status code for the response.
@@ -41,14 +39,15 @@ def throw_error(status_code, error_message, log=None, error_details=None):
             sanitized_messages = []
             for msg in messages:
                 logger.debug(
-                        f"{field}: '{msg}'"
+                    f"\nField: {field}\nmsg: {msg}\ncode: {msg.code}\n"
                 )
-                if msg.startswith("[CUSTOM]"):
-                    sanitized_messages.append(
-                        msg.replace("[CUSTOM] ", "")
+                sanitized_messages.append(msg)
+                if log:
+                    logger.debug(
+                        "Appending custom error --> " +
+                        f"{field}: '{msg}'"
                     )
-                if isinstance(sanitized_messages, list) and sanitized_messages:
-                    sanitized_errors[field] = sanitized_messages
+                sanitized_errors[field] = sanitized_messages
         return sanitized_errors
 
     error_response = {"error_message": error_message}
