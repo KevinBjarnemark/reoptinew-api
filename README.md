@@ -209,3 +209,5 @@ It's worth mentioning **source code references**. These references can be found 
 - For example, during the implementation of the error handling system, classes from `Lib/site-packages/rest_framework/fields.py` helped with gaining a deeper understanding of the underlying processes within the Django Rest Framework.
 
 - [Django REST Framework docs](https://www.django-rest-framework.org/)
+- [Django REST Framework (GitHub docs)](https://github.com/encode/django-rest-framework/tree/master/docs/api-guide)
+- [JWT](https://django-rest-framework-simplejwt.readthedocs.io/en/latest/getting_started.html)

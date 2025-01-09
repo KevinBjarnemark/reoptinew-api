@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Profile
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
+from .constants import VALIDATION_RULES
 
 # Securely hash passwords before storing in database
 User = get_user_model()
@@ -40,7 +41,26 @@ class SignUpSerializer(serializers.ModelSerializer):
         # Check if passwords match
         if data['password1'] != data['password2']:
             raise serializers.ValidationError(
-                {"password": "Passwords do not match."}
+                {"password": "[CUSTOM] Passwords do not match."}
+            )
+        # Check minimum password length
+        if len(data['password1']) < VALIDATION_RULES["PASSWORD"]["MIN_LENGTH"]:
+            raise serializers.ValidationError(
+                {
+                    "password": (
+                        "[CUSTOM] Password must be at least " +
+                        f"{VALIDATION_RULES["PASSWORD"]["MIN_LENGTH"]} " +
+                        "characters long."
+                    )
+                }
+            )
+
+        # Check if username already exists
+        if User.objects.filter(username=data["username"]).exists():
+            raise serializers.ValidationError(
+                {
+                    "username": "[CUSTOM] This username is already taken."
+                }
             )
 
         # Access the image from request.FILES
@@ -48,11 +68,11 @@ class SignUpSerializer(serializers.ModelSerializer):
         image = request.FILES.get('image', None)
         # Validate image file type
         if image:
-            valid_extensions = ['jpg', 'jpeg', 'png', 'webp']
+            valid_extensions = VALIDATION_RULES["IMAGE"]["VALID_EXTENSIONS"]
             extension = image.name.split('.')[-1].lower()
             if extension not in valid_extensions:
                 raise serializers.ValidationError(
-                    {"image": "Invalid file type."}
+                    {"image": "[CUSTOM] Invalid file type."}
                 )
 
         return data
@@ -95,6 +115,6 @@ class LogInSerializer(serializers.ModelSerializer):
             username=data['username'], password=data['password']
         )
         if not user:
-            raise serializers.ValidationError("Invalid credentials.")
+            raise serializers.ValidationError("[CUSTOM] Invalid credentials.")
         data['user'] = user
         return data
