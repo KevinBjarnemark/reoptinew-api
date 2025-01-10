@@ -8,6 +8,7 @@
 - 🛢️ [Databases](#databases)
 - ❌ [Error handling](#error-handling)
 - 🛠️ [Technologies](#technologies)
+- ✨ [Credits](#credits)
 - 🖊️ [References](#references)
 
 ## Frontend
@@ -199,6 +200,55 @@ Pytest is a framework used for writing and running tests in Python. It supports 
     </summary>
 
 **A package for integrating Cloudinary with Django, providing a way to manage media files in the cloud.**
+
+</details>
+
+## Credits
+
+    As the only developer working on this project, I will reference myself in first-person and point you to some people, tools, and sources that helped me along the way.
+
+### Custom error messages
+
+I've never worked with Django REST Framework (DRF) before, and unexpected challenges appeared when I was trying to customize error messages. My goal was to fully customize all error messages, simplifying complex errors with generic messages. But, I never figured out how to achieve that without allowing unchecked messages to slip through. This was mainly due to the fact that an error thrown in the model (before reaching the validate() method) breaks code execution and stop further validation. 
+
+However, [mariodev](https://stackoverflow.com/users/1566605/mariodev) in [this thread](https://stackoverflow.com/questions/26943985/custom-error-messages-in-django-rest-framework-serializer) had a perfect solution for customizing specified error message before reaching the validate() method.
+
+Here's how I used his solution in [serializers.py](apps/users/serializers.py)
+```python
+# Overwrite default error messages with custom errors
+def __init__(self, *args, **kwargs):
+    super(SignUpSerializer, self).__init__(*args, **kwargs)
+    self.fields['username'].error_messages['required'] = 'You must enter a username.'
+    self.fields['username'].error_messages['blank'] = 'Username is missing.'
+```
+
+## Extensions
+
+<details>
+    <summary>
+        Pylint
+    </summary>
+
+**Python Linter**
+
+Pylint is a code analysis tool for Python that checks your code for errors, enforces coding standards, and offers suggestions to improve code quality. It supports customizable rules and integrates with most editors, helping maintain clean and maintainable Python code.
+
+**Tip:** You don't need the Pylint package when using the extension (unless you want to include it in a CI/CD pipeline or similar). If you just want a configuration file, you can install Pylint temporarily and generate it with the command below.
+
+```
+pylint --generate-rcfile > .pylintrc
+```
+
+</details>
+
+<details>
+    <summary>
+        Black
+    </summary>
+
+**Code formatting tool**
+
+Black is a code formatting tool for Python that enforces a consistent style by reformatting your code. It prioritizes readability and avoids manual formatting by following strict and consistent rules. Specifically, I've been using the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=ms-python.black-formatter). [Here's](pyproject.toml) the configuration file.
 
 </details>
 
