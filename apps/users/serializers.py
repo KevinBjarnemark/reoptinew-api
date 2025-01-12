@@ -134,3 +134,16 @@ class LogInSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Invalid credentials.")
         data['user'] = user
         return data
+
+
+# Pylint is ignored here since there is no purpose of saving/creating data
+# in this serializer.
+# pylint: disable=abstract-method
+class DeleteAccountSerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True, required=True)
+
+    def validate_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Incorrect password.")
+        return value

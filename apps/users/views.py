@@ -10,7 +10,12 @@ from rest_framework.permissions import (
 from rest_framework_simplejwt.tokens import RefreshToken
 from static.py.utils.logging import log_debug
 from .models import Profile as ProfileModel
-from .serializers import ProfileSerializer, SignUpSerializer, LogInSerializer
+from .serializers import (
+    ProfileSerializer,
+    SignUpSerializer,
+    LogInSerializer,
+    DeleteAccountSerializer,
+)
 
 
 class UserProfile(APIView):
@@ -221,5 +226,51 @@ class LogOut(APIView):
             return throw_error(
                 500,
                 "Something went wrong during logout.",
+                log=f"Unhandled exception: {str(e)}",
+            )
+
+
+class DeleteAccount(APIView):
+    """
+    Deletes a user's account.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        show_debugging = True
+        try:
+            # Serialize incoming data
+            serializer = DeleteAccountSerializer(
+                data=request.data, context={'request': request}
+            )
+            if not serializer.is_valid():
+                return throw_error(
+                    400,
+                    "Validation failed.",
+                    log=f"Validation errors: {serializer.errors}",
+                    error_details=serializer.errors,
+                )
+            log_debug(
+                show_debugging,
+                "User is valid, proceeding with account deletion.",
+                "",
+            )
+            # Delete the user's account
+            user = request.user
+            user.delete()
+
+            # Return a successful response
+            return Response(
+                {
+                    "message": "Deleted account successfully.",
+                },
+                status=200,
+            )
+        # Handle unexpected errors
+        except Exception as e:
+            return throw_error(
+                500,
+                "Something went wrong during account deletion.",
                 log=f"Unhandled exception: {str(e)}",
             )

@@ -3,7 +3,7 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
-from .views import Profile, SignUp, LogIn, LogOut, UserProfile
+from .views import Profile, SignUp, LogIn, LogOut, UserProfile, DeleteAccount
 
 
 urlpatterns = [
@@ -12,6 +12,7 @@ urlpatterns = [
     path('signup/', SignUp.as_view(), name='signup'),
     path('login/', LogIn.as_view(), name='login'),
     path('logout/', LogOut.as_view(), name='logout'),
+    path('delete-account/', DeleteAccount.as_view(), name='delete_account'),
     path(
         'api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'
     ),
