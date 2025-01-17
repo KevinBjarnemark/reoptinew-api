@@ -88,6 +88,7 @@ INSTALLED_APPS = [
     'cloudinary',
     # Created apps
     'apps.users',
+    'apps.posts',
 ]
 
 MIDDLEWARE = [
