@@ -4,12 +4,28 @@
 
 ## Table of Contents
 
+- 🗺️ [Project Map](#map)
 - 🎨 [Frontend](#frontend)
 - 🛢️ [Databases](#databases)
 - ❌ [Error handling](#error-handling)
 - 🛠️ [Technologies](#technologies)
 - ✨ [Credits](#credits)
 - 🖊️ [References](#references)
+
+## Project Map 
+
+The "map" below provides an overview of key resources in this project. 
+
+#### External resources
+
+- 🖥️ [Live web app](https://reoptinew-09d333f23d8e.herokuapp.com/)  
+- 🎨 [Frontend repository (with documentation)](https://github.com/KevinBjarnemark/reoptinew). 
+
+#### Documentation
+
+- 📉 [First iteration](https://github.com/KevinBjarnemark/reoptinew/blob/main/docs/iteration-1/README.md)  
+- 📉 [Sprints](https://github.com/KevinBjarnemark/reoptinew/tree/main/docs/iteration-1/sprints)  
+- 📃 [GitHub Projects (Kanban)](https://github.com/users/KevinBjarnemark/projects/10).
 
 ## Frontend
 
@@ -38,7 +54,7 @@ Currently, there are three separate databases that Reoptinew relies on. One for 
 
 You can find the complete data schema for all models in this [Google Drive folder](https://drive.google.com/drive/folders/1WrPCJ0CRQjOo84iZWGu7mcBEgYjKUaZA?usp=sharing). 
 
-![Post model](docs/assets/iteration_1/post_model.webp "A spreadsheet of the post model.")
+![Post model](docs/assets/iteration-1/post-model.webp "A spreadsheet of the post model.")
 
 ## Error Handling
 
