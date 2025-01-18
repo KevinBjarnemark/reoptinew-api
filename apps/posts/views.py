@@ -21,7 +21,7 @@ class PostAPIView(APIView):
 
             log_debug(
                 show_debugging,
-                "Returning all posts to the client.",
+                "Returning post(s) to the client.",
                 serializer.data,
             )
             return Response(serializer.data, status=200)
@@ -44,3 +44,25 @@ class PostAPIView(APIView):
             )
         except Exception as e:
             return throw_error(500, "Unable to create post.", log=str(e))
+
+
+class SinglePost(APIView):
+
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get(self, request, pk):
+        show_debugging = True
+        try:
+            single_post = Post.objects.get(pk=pk)
+            serializer = PostSerializer(
+                single_post, context={'request': request}
+            )
+
+            log_debug(
+                show_debugging,
+                "Returning post to the client.",
+                serializer.data,
+            )
+            return Response(serializer.data, status=200)
+        except Exception as e:
+            return throw_error(500, "Unable to load posts.", log=str(e))
