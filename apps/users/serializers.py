@@ -11,11 +11,13 @@ User = get_user_model()
 
 class ProfileSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source='user.username')
+    user_id = serializers.ReadOnlyField(source='user.id')
 
     class Meta:
         model = Profile
         fields = [
             'id',
+            'user_id',
             'birth_date',
             'image',
             "username",

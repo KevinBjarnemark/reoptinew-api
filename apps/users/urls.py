@@ -7,7 +7,7 @@ from .views import Profile, SignUp, LogIn, LogOut, UserProfile, DeleteAccount
 
 
 urlpatterns = [
-    path('profile/<int:pk>/', Profile.as_view()),
+    path('profile/<str:identifier>/', Profile.as_view()),
     path('profile/', UserProfile.as_view(), name='profile'),
     path('signup/', SignUp.as_view(), name='signup'),
     path('login/', LogIn.as_view(), name='login'),

@@ -3,10 +3,10 @@ from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.permissions import (
-    DjangoModelPermissionsOrAnonReadOnly,
     AllowAny,
     IsAuthenticated,
 )
+from django.shortcuts import get_object_or_404
 from rest_framework_simplejwt.tokens import RefreshToken
 from static.py.utils.logging import log_debug
 from .models import Profile as ProfileModel
@@ -57,17 +57,30 @@ class Profile(APIView):
     """Returns a profile based on the primary key"""
 
     # Only allow GET requests
-    permission_classes = [DjangoModelPermissionsOrAnonReadOnly]
+    permission_classes = [AllowAny]
     http_method_names = ['get']
     serializer_class = ProfileSerializer
 
     def get_queryset(self):
         return ProfileModel.objects.all()
 
-    def get(self, request, pk):
+    def get(self, request, identifier):
+        show_debugging = True
         try:
-            # Get the profile by primary key
-            profile = ProfileModel.objects.get(pk=pk)
+            log_debug(
+                show_debugging,
+                "Loading a user's profile, received identifier:",
+                identifier,
+            )
+            if str(identifier).isdigit():
+                # Lookup profile by user ID
+                profile = get_object_or_404(ProfileModel, user__id=identifier)
+            else:
+                # Lookup profile by username
+                profile = get_object_or_404(
+                    ProfileModel, user__username=identifier
+                )
+
             # Serialize fields
             serializer = ProfileSerializer(
                 profile, context={'request': request}
@@ -79,7 +92,7 @@ class Profile(APIView):
             return throw_error(
                 404,
                 "Profile not found.",
-                log=f"Profile not found for user ID: {pk}",
+                log=f"Profile not found for user ID: {identifier}",
             )
         # Handle unexpected errors
         except Exception as e:
