@@ -75,6 +75,11 @@ class SignUpSerializer(serializers.ModelSerializer):
         # Normalize username to lowercase for case-insensitive comparison
         normalized_username = data["username"].lower()
 
+        # Username cannot only be digits check
+        if str(normalized_username).isdigit():
+            raise serializers.ValidationError(
+                {"username": "Username cannot only be digits."}
+            )
         # Check if username already exists, ignoring case
         if User.objects.filter(username__iexact=normalized_username).exists():
             raise serializers.ValidationError(
