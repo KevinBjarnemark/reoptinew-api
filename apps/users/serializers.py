@@ -72,8 +72,11 @@ class SignUpSerializer(serializers.ModelSerializer):
         ] = 'Username is missing.'
 
     def validate(self, data):
-        # Check if username already exists
-        if User.objects.filter(username=data["username"]).exists():
+        # Normalize username to lowercase for case-insensitive comparison
+        normalized_username = data["username"].lower()
+
+        # Check if username already exists, ignoring case
+        if User.objects.filter(username__iexact=normalized_username).exists():
             raise serializers.ValidationError(
                 {"username": "This username is already taken."}
             )

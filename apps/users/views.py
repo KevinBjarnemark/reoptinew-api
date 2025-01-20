@@ -78,7 +78,7 @@ class Profile(APIView):
             else:
                 # Lookup profile by username
                 profile = get_object_or_404(
-                    ProfileModel, user__username=identifier
+                    ProfileModel, user__username__iexact=identifier
                 )
 
             # Serialize fields
