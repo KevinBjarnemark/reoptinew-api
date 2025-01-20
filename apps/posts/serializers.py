@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import Post
+from static.py.utils.environment import image_url
 
 
 # Securely hash passwords before storing in database
@@ -33,8 +34,7 @@ class PostSerializer(serializers.ModelSerializer):
         return {
             'id': user.id,
             'username': user.username,
-            # Return image URL or None
-            'image': profile.image.url if profile.image else None,
+            'image': image_url(profile.image),
         }
 
     def create(self, validated_data):

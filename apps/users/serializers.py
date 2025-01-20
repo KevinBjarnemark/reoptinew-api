@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
 from .constants import VALIDATION_RULES
 from .models import Profile
-
+from static.py.utils.environment import image_url
 
 # Securely hash passwords before storing in database
 User = get_user_model()
@@ -25,6 +25,8 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
+        # Handle image
+        representation['image'] = image_url(instance.image)
         # Remove birth_date if the user is not the owner
         request = self.context.get('request')
         if request.user != instance.user:
