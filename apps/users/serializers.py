@@ -1,9 +1,10 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
+from static.py.utils.environment import image_url
 from .constants import VALIDATION_RULES
 from .models import Profile
-from static.py.utils.environment import image_url
+
 
 # Securely hash passwords before storing in database
 User = get_user_model()

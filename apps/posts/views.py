@@ -64,7 +64,7 @@ class PostAPIView(APIView):
                 data=request.data, context={'request': request}
             )
             if serializer.is_valid():
-                serializer.save()
+                serializer.save()  # Create post
                 return Response(serializer.data, status=201)
             return throw_error(
                 400,
