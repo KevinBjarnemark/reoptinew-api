@@ -39,6 +39,9 @@ jobs:
           DJANGO_SETTINGS_MODULE: config.settings
           # Override DATABASE_URL during tests
           DATABASE_URL: "sqlite:///:memory:" 
+          ${{ secrets.DEV_SERVER_HOST }}
+          ${{ secrets.DEV_SERVER_FRONTEND_PORT }}
+          ${{ secrets.DEV_SERVER_PORT }}
 
       - name: Authenticate with Heroku
         env:

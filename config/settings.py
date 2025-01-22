@@ -34,7 +34,7 @@ dev_server_frontend_port = config('DEV_SERVER_FRONTEND_PORT')
 if DEBUG:
     # Allow localhost in development
     CORS_ALLOWED_ORIGINS = [
-        f'http://{dev_server_host}:{dev_server_frontend_port}'
+        f'http://{dev_server_host}:{int(dev_server_frontend_port)}'
     ]
     ALLOWED_HOSTS = [dev_server_host]
 else:
