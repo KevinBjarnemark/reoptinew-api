@@ -28,13 +28,15 @@ CLOUDINARY_URL = config('CLOUDINARY_URL')
 # Enable or disable all debug logs executed by static/py/utils/logging.py.
 SHOW_ALL_LOGS = config("SHOW_ALL_LOGS", default=False, cast=bool)
 
-dev_server_url = config('DEV_SERVER_URL')
-dev_server_port = config('DEV_SERVER_PORT')
+dev_server_host = config('DEV_SERVER_HOST')
+dev_server_frontend_port = config('DEV_SERVER_FRONTEND_PORT')
 
 if DEBUG:
     # Allow localhost in development
-    CORS_ALLOWED_ORIGINS = [f'http://{dev_server_url}:{dev_server_port}']
-    ALLOWED_HOSTS = [dev_server_url]
+    CORS_ALLOWED_ORIGINS = [
+        f'http://{dev_server_host}:{dev_server_frontend_port}'
+    ]
+    ALLOWED_HOSTS = [dev_server_host]
 else:
     # Allow the deployed frontend in production
     CORS_ALLOWED_ORIGINS = [

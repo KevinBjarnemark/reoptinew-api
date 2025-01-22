@@ -27,9 +27,11 @@ def image_url(image_field):
         return None
 
     # Get the development server URL from environment variables
-    dev_server_url = config('DEV_SERVER_URL')
+    dev_server_host = config('DEV_SERVER_HOST')
+    dev_server_port = config('DEV_SERVER_PORT')
 
     # Return the URL with or without the development server prefix
     if is_development():  # Development environment
-        return f"http://{dev_server_url}:8000{image_field.url}"
+        # Build the image url from environment variables
+        return f"http://{dev_server_host}:{dev_server_port}{image_field.url}"
     return image_field.url  # Production environment
