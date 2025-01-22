@@ -46,9 +46,6 @@ jobs:
       - name: Authenticate with Heroku
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-          DEV_SERVER_HOST: ${{ secrets.DEV_SERVER_HOST }}
-          DEV_SERVER_PORT: ${{ secrets.DEV_SERVER_PORT }}
-          DEV_SERVER_FRONTEND_PORT: ${{ secrets.DEV_SERVER_FRONTEND_PORT }}
         run: |
           echo "machine api.heroku.com login $HEROKU_API_KEY password $HEROKU_API_KEY" > ~/.netrc
           echo "machine git.heroku.com login $HEROKU_API_KEY password $HEROKU_API_KEY" >> ~/.netrc
@@ -62,5 +59,9 @@ jobs:
         run: heroku git:remote -a reoptinew-api
 
       - name: Deploy to Heroku
+        env:
+          DEV_SERVER_HOST: ${{ secrets.DEV_SERVER_HOST }}
+          DEV_SERVER_PORT: ${{ secrets.DEV_SERVER_PORT }}
+          DEV_SERVER_FRONTEND_PORT: ${{ secrets.DEV_SERVER_FRONTEND_PORT }}
         if: ${{ github.ref_type == 'tag' || github.event_name == 'workflow_dispatch' }}
         run: git push heroku HEAD:refs/heads/main -f
