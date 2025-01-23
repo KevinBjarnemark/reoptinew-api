@@ -92,7 +92,19 @@ class PostAPIView(APIView):
                         500, "Unable to filter posts.", log=str(e)
                     )
 
-            # Default: Handle post creation
+            # Default: Handle post creation.
+            # Return an error if the user is not mature enough to create post.
+            if not self.check_maturity():
+                return throw_error(
+                    400,
+                    "You must be at least "
+                    + str(VALIDATION_RULES['AGE_RESTRICTED_CONTENT_AGE'])
+                    + " years old to create a post that contain harmful "
+                    + "tools and materials.",
+                    log="Blocked a user from creating a post because the"
+                    + " user is not old enough.",
+                )
+
             serializer = PostSerializer(
                 data=request.data, context={'request': request}
             )
@@ -107,6 +119,19 @@ class PostAPIView(APIView):
             )
         except Exception as e:
             return throw_error(500, "Unable to create post.", log=str(e))
+
+    def check_maturity(self):
+        """
+        Returns True if the user is older than the
+        AGE_RESTRICTED_CONTENT_AGE constant variable, False otherwise.
+        """
+        profile = getattr(self.request.user, 'profile', None)
+        if not user_is_mature(
+            profile.birth_date,
+            VALIDATION_RULES["AGE_RESTRICTED_CONTENT_AGE"],
+        ):
+            return False
+        return True
 
     def filter_age_restricted_content(self, posts):
         """
@@ -126,11 +151,7 @@ class PostAPIView(APIView):
                     )
                 return posts
             # If authenticated, check the user's profile and age
-            profile = getattr(self.request.user, 'profile', None)
-            if profile and not user_is_mature(
-                profile.birth_date,
-                VALIDATION_RULES["AGE_RESTRICTED_CONTENT_AGE"],
-            ):
+            if not self.check_maturity():
                 if (
                     posts.harmful_materials.exists()
                     or posts.harmful_tools.exists()
@@ -152,26 +173,15 @@ class PostAPIView(APIView):
             )
 
         # if authenticated, filter out age restricted content
-        profile = getattr(self.request.user, 'profile', None)
-        if profile:
-            if not user_is_mature(
-                profile.birth_date,
-                VALIDATION_RULES["AGE_RESTRICTED_CONTENT_AGE"],
-            ):
-                # Return posts without harmful materials and tools
-                return posts.filter(
-                    harmful_materials__isnull=True,
-                    harmful_tools__isnull=True,
-                )
-
-            # If the user is mature, return all posts
-            return posts
-        else:
-            return throw_error(
-                500,
-                "Your account is missing a profile.",
-                log="A user is missing a profile, request rejected.",
+        if not self.check_maturity():
+            # Return posts without harmful materials and tools
+            return posts.filter(
+                harmful_materials__isnull=True,
+                harmful_tools__isnull=True,
             )
+
+        # If the user is mature, return all posts
+        return posts
 
     def filter_posts(self, filters):
         """
