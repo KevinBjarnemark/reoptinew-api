@@ -5,6 +5,8 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import AbstractUser
 from static.py.utils.environment import is_development
+from static.py.utils.helpers import user_is_mature
+from apps.users.constants import VALIDATION_RULES
 
 
 # Custom user
@@ -41,6 +43,7 @@ class Profile(models.Model):
         clean():
             Validates that the birth date is not in the future.
     """
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE
     )
@@ -55,3 +58,14 @@ class Profile(models.Model):
     def clean(self):
         if self.birth_date and self.birth_date > timezone.now().date():
             raise ValidationError("Birth date cannot be in the future.")
+
+        # Ensure the user is at least 13 years old
+        if self.birth_date:
+            if not user_is_mature(
+                self.birth_date, VALIDATION_RULES["BIRTH_DATE"]["MINIMUM_AGE"]
+            ):
+                raise ValidationError(
+                    "You must be at least 13 years old to create an account."
+                )
+        else:
+            raise ValidationError("Birth date is missing in profile")

@@ -1,5 +1,3 @@
-
-
 VALIDATION_RULES = {
     "USERNAME": {
         "MIN_LENGTH": 2,
@@ -11,5 +9,9 @@ VALIDATION_RULES = {
     },
     "IMAGE": {
         "VALID_EXTENSIONS": ["jpg", "jpeg", "png", "webp"],
-    }
+    },
+    "BIRTH_DATE": {
+        "MINIMUM_AGE": 13,
+    },
+    "AGE_RESTRICTED_CONTENT_AGE": 16,
 }

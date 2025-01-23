@@ -54,7 +54,8 @@ class UserProfile(APIView):
 
 
 class Profile(APIView):
-    """Returns a profile based on the primary key"""
+    """Returns a profile based on either the userid or
+    the username"""
 
     # Only allow GET requests
     permission_classes = [AllowAny]
