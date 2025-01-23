@@ -1,3 +1,4 @@
+import json
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny
@@ -76,15 +77,18 @@ class PostAPIView(APIView):
 
     def post(self, request):
         try:
+            # Request type
             action = request.data.get('action', 'create')
 
             # Handle search/filter action
             if action == 'filter':
                 try:
                     filters = request.data.get('filters', {})
-                    queryset = self.filter_posts(filters)
+                    posts = self.filter_posts(filters)
                     serializer = PostSerializer(
-                        queryset, many=True, context={'request': request}
+                        posts,
+                        many=True,
+                        context={'request': request},
                     )
                     return Response(serializer.data, status=200)
                 except Exception as e:
@@ -92,8 +96,20 @@ class PostAPIView(APIView):
                         500, "Unable to filter posts.", log=str(e)
                     )
 
-            # Default: Handle post creation.
-            # Return an error if the user is not mature enough to create post.
+            # Handle post creation
+            # Request body mutable copy
+            data = request.data.copy()
+
+            # Convert FormData (JavaScript) to lists
+            if "tools" in data:
+                # Convert JSON string to list
+                data["tools"] = json.loads(data["tools"])
+
+            if "materials" in data:
+                # Convert JSON string to list
+                data["materials"] = json.loads(data["materials"])
+
+            # Return an error if the user is not mature enough to create post
             if not self.check_maturity():
                 return throw_error(
                     400,
@@ -106,7 +122,7 @@ class PostAPIView(APIView):
                 )
 
             serializer = PostSerializer(
-                data=request.data, context={'request': request}
+                data=data, context={'request': request}
             )
             if serializer.is_valid():
                 serializer.save()  # Create post

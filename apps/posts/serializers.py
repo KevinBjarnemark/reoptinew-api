@@ -3,8 +3,8 @@ from django.contrib.auth import get_user_model
 from static.py.utils.environment import image_url
 from static.py.utils.logging import log_debug
 from static.py.utils.convert import parse_stringified_object
-from .models import Post, HarmfulMaterial, HarmfulTool
-
+from .models import Post, HarmfulMaterial, HarmfulTool, Tool, Material
+from .fields.list_of_primitive_dict_field import ListOfPrimitiveDictField
 
 # Securely hash passwords before storing in database
 User = get_user_model()
@@ -26,6 +26,12 @@ class PostSerializer(serializers.ModelSerializer):
         required=False,
         default=list,
     )
+    materials = ListOfPrimitiveDictField(
+        write_only=True, required=False, default=list
+    )
+    tools = ListOfPrimitiveDictField(
+        write_only=True, required=False, default=list
+    )
 
     class Meta:
         model = Post
@@ -38,6 +44,8 @@ class PostSerializer(serializers.ModelSerializer):
             'harmful_tools',
             'created_at',
             'author',
+            'tools',
+            'materials',
         ]
         read_only_fields = ['id', 'created_at', 'author']
 
@@ -71,6 +79,26 @@ class PostSerializer(serializers.ModelSerializer):
             {"id": material.id, "name": material.name}
             for material in instance.harmful_materials.all()
         ]
+
+        # Include related tools and materials
+        representation["tools"] = [
+            {
+                "quantity": tool.quantity,
+                "name": tool.name,
+                "description": tool.description,
+            }
+            for tool in instance.Tools.all()
+        ]
+
+        representation["materials"] = [
+            {
+                "quantity": material.quantity,
+                "name": material.name,
+                "description": material.description,
+            }
+            for material in instance.Materials.all()
+        ]
+
         return representation
 
     def validate_harmful_tools(self, value):
@@ -130,6 +158,8 @@ class PostSerializer(serializers.ModelSerializer):
         # Pop harmful_tools and harmful_materials from validated data
         harmful_tools_data = validated_data.pop('harmful_tools', [])
         harmful_materials_data = validated_data.pop('harmful_materials', [])
+        tools_data = validated_data.pop('tools', [])
+        materials_data = validated_data.pop('materials', [])
 
         # Create the post
         post = Post.objects.create(
@@ -137,6 +167,15 @@ class PostSerializer(serializers.ModelSerializer):
             user=self.context['request'].user,
             **validated_data,
         )
+
+        # Add related tools
+        for tool in tools_data:
+            Tool.objects.create(post=post, **tool)
+
+        # Add related materials
+        for material in materials_data:
+            Material.objects.create(post=post, **material)
+
         # Add ManyToMany relationships
         for tool_name in harmful_tools_data:
             tool, _ = HarmfulTool.objects.get_or_create(name=tool_name)
