@@ -102,9 +102,13 @@ class PostSerializer(serializers.ModelSerializer):
         request = self.context.get('request', None)
         # Include likes object
         representation["likes"] = {
-            "user_has_liked": instance.likes.filter(
-                user=request.user
-            ).exists(),
+            "user_has_liked": (
+                instance.likes.filter(user=request.user).exists()
+                if request
+                and hasattr(request, "user")
+                and request.user.is_authenticated
+                else False
+            ),
             "count": instance.likes.count(),
         }
 

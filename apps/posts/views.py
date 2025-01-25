@@ -241,14 +241,15 @@ class LikeView(APIView):
                 return throw_error(
                     404,
                     "Post doesn't exist.",
-                    log="User tried to like a post that doensn't exist.",
+                    log="User tried to like a post that doesn't exist.",
                 )
             # Check if the like already exists
             if Like.objects.filter(post=post, user=request.user).exists():
                 return throw_error(
                     400,
                     "You have already liked this post",
-                    log="User tried to like a post already has been liked.",
+                    log="Rejected user who tried to like an already "
+                    + "liked post.",
                 )
             # Create the like
             like = Like.objects.create(post=post, user=request.user)
@@ -273,12 +274,11 @@ class LikeView(APIView):
                     },
                     status=200,
                 )
-            return Response(
-                {
-                    'message': 'Like not found. Nothing to remove.',
-                    'post_id': post_id,
-                },
-                status=200,
+            return throw_error(
+                500,
+                "Couldn't find like, nothing to remove.",
+                log="Rejected user who tried to remove a like that "
+                + "doens't exist.",
             )
         except Exception as e:
             return throw_error(500, "Unable to remove like.", log=str(e))
