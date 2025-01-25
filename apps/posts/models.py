@@ -49,7 +49,7 @@ class Material(models.Model):
     """This model is related to the Post model"""
 
     post = models.ForeignKey(
-        Post, on_delete=models.CASCADE, related_name='Materials'
+        Post, on_delete=models.CASCADE, related_name='materials'
     )
     quantity = models.CharField(max_length=50)
     name = models.CharField(max_length=255)
@@ -60,8 +60,27 @@ class Tool(models.Model):
     """This model is related to the Post model"""
 
     post = models.ForeignKey(
-        Post, on_delete=models.CASCADE, related_name='Tools'
+        Post, on_delete=models.CASCADE, related_name='tools'
     )
     quantity = models.CharField(max_length=50)
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
+
+
+class Like(models.Model):
+    """This model is related to the Post model"""
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['post', 'user'], name='unique_like'
+            )
+        ]
+
+    post = models.ForeignKey(
+        Post, on_delete=models.CASCADE, related_name='likes'
+    )
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='likes'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)

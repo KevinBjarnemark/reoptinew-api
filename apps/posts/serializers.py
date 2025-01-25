@@ -87,7 +87,7 @@ class PostSerializer(serializers.ModelSerializer):
                 "name": tool.name,
                 "description": tool.description,
             }
-            for tool in instance.Tools.all()
+            for tool in instance.tools.all()
         ]
 
         representation["materials"] = [
@@ -96,8 +96,17 @@ class PostSerializer(serializers.ModelSerializer):
                 "name": material.name,
                 "description": material.description,
             }
-            for material in instance.Materials.all()
+            for material in instance.materials.all()
         ]
+
+        request = self.context.get('request', None)
+        # Include likes object
+        representation["likes"] = {
+            "user_has_liked": instance.likes.filter(
+                user=request.user
+            ).exists(),
+            "count": instance.likes.count(),
+        }
 
         return representation
 

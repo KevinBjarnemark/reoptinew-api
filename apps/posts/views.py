@@ -1,7 +1,11 @@
 import json
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny
+from rest_framework.permissions import (
+    IsAuthenticatedOrReadOnly,
+    AllowAny,
+    IsAuthenticated,
+)
 from rest_framework.exceptions import PermissionDenied
 from django.db.models import Q
 from static.py.utils.error_handling import throw_error
@@ -9,7 +13,7 @@ from static.py.utils.logging import log_debug
 from static.py.utils.helpers import user_is_mature
 from apps.users.constants import VALIDATION_RULES
 from .serializers import PostSerializer
-from .models import Post
+from .models import Post, Like
 
 
 class PostAPIView(APIView):
@@ -29,6 +33,7 @@ class PostAPIView(APIView):
 
     def get(self, request, pk=None):
         show_debugging = True
+        show_post_data_debugging = False
         try:
             if pk:
                 # Single post request
@@ -40,7 +45,7 @@ class PostAPIView(APIView):
                     single_post, context={'request': request}
                 )
                 log_debug(
-                    show_debugging,
+                    show_post_data_debugging,
                     "Returning single post to the client.",
                     serializer.data,
                 )
@@ -53,7 +58,7 @@ class PostAPIView(APIView):
             )
 
             log_debug(
-                show_debugging,
+                show_post_data_debugging,
                 "Returning post(s) to the client.",
                 serializer.data,
             )
@@ -223,3 +228,57 @@ class PostAPIView(APIView):
                 )
 
         return posts
+
+
+class LikeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, post_id):
+        try:
+            try:
+                post = Post.objects.get(id=post_id)
+            except Post.DoesNotExist:
+                return throw_error(
+                    404,
+                    "Post doesn't exist.",
+                    log="User tried to like a post that doensn't exist.",
+                )
+            # Check if the like already exists
+            if Like.objects.filter(post=post, user=request.user).exists():
+                return throw_error(
+                    400,
+                    "You have already liked this post",
+                    log="User tried to like a post already has been liked.",
+                )
+            # Create the like
+            like = Like.objects.create(post=post, user=request.user)
+            return Response(
+                {"message": "Post liked successfully!", "id": like.id},
+                status=201,
+            )
+        except Exception as e:
+            return throw_error(500, "Unable to like post.", log=str(e))
+
+    def delete(self, request, post_id):
+        try:
+            like = Like.objects.filter(
+                post_id=post_id, user=request.user
+            ).first()
+            if like:
+                like.delete()
+                return Response(
+                    {
+                        'message': 'Like removed successfully!',
+                        'post_id': post_id,
+                    },
+                    status=200,
+                )
+            return Response(
+                {
+                    'message': 'Like not found. Nothing to remove.',
+                    'post_id': post_id,
+                },
+                status=200,
+            )
+        except Exception as e:
+            return throw_error(500, "Unable to remove like.", log=str(e))
