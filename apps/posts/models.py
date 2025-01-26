@@ -37,6 +37,8 @@ class Post(models.Model):
     harmful_materials = models.ManyToManyField(
         HarmfulMaterial, blank=True, related_name='posts'
     )
+    # Image index for posts with no image attached
+    default_image_index = models.IntegerField(default=1)
     if is_development():
         image = models.ImageField(
             upload_to='profile_images/', blank=True, null=True

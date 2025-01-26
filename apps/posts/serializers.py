@@ -46,6 +46,7 @@ class PostSerializer(serializers.ModelSerializer):
             'author',
             'tools',
             'materials',
+            'default_image_index',
         ]
         read_only_fields = ['id', 'created_at', 'author']
 
