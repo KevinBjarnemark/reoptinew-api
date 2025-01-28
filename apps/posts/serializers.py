@@ -3,7 +3,13 @@ from django.contrib.auth import get_user_model
 from static.py.utils.environment import image_url
 from static.py.utils.logging import log_debug
 from static.py.utils.convert import parse_stringified_object
-from .models import Post, HarmfulMaterial, HarmfulTool, Tool, Material
+from .models import (
+    Post,
+    HarmfulMaterialCategory,
+    HarmfulToolCategory,
+    Tool,
+    Material,
+)
 from .fields.list_of_primitive_dict_field import ListOfPrimitiveDictField
 
 # Securely hash passwords before storing in database
@@ -14,13 +20,13 @@ class PostSerializer(serializers.ModelSerializer):
     # Custom field for embedding author details
     author = serializers.SerializerMethodField()
     # Writable fields for ManyToMany input
-    harmful_tools = serializers.ListField(
+    harmful_tool_categories = serializers.ListField(
         child=serializers.CharField(),
         write_only=True,
         required=False,
         default=list,
     )
-    harmful_materials = serializers.ListField(
+    harmful_material_categories = serializers.ListField(
         child=serializers.CharField(),
         write_only=True,
         required=False,
@@ -40,13 +46,14 @@ class PostSerializer(serializers.ModelSerializer):
             'title',
             'description',
             'instructions',
-            'harmful_materials',
-            'harmful_tools',
+            'harmful_material_categories',
+            'harmful_tool_categories',
             'created_at',
             'author',
             'tools',
             'materials',
             'default_image_index',
+            'harmful_post',
         ]
         read_only_fields = ['id', 'created_at', 'author']
 
@@ -72,13 +79,12 @@ class PostSerializer(serializers.ModelSerializer):
         """
         representation = super().to_representation(instance)
         # Include full object details for ManyToMany relationships
-        representation["harmful_tools"] = [
-            {"id": tool.id, "name": tool.name}
-            for tool in instance.harmful_tools.all()
+        representation["harmful_tool_categories"] = [
+            tool.category for tool in instance.harmful_tool_categories.all()
         ]
-        representation["harmful_materials"] = [
-            {"id": material.id, "name": material.name}
-            for material in instance.harmful_materials.all()
+        representation["harmful_material_categories"] = [
+            material.category
+            for material in instance.harmful_material_categories.all()
         ]
 
         # Include related tools and materials
@@ -115,34 +121,36 @@ class PostSerializer(serializers.ModelSerializer):
 
         return representation
 
-    def validate_harmful_tools(self, value):
+    def validate_harmful_tool_categories(self, value):
         """
-        Validates harmful tools, ensuring all names exist in the database.
+        Validates harmful tool_categories, ensuring all names exist in
+        the database.
         """
         # Since this is multipart/formdata, parse the stringified object
         parsed_value = parse_stringified_object(value)
 
         # Fetch all valid names from the database
         valid_tools = set(
-            HarmfulTool.objects.filter(name__in=parsed_value).values_list(
-                "name", flat=True
-            )
+            HarmfulToolCategory.objects.filter(
+                category__in=parsed_value
+            ).values_list("category", flat=True)
         )
         if isinstance(parsed_value, list) and parsed_value:
-            for material in parsed_value:
-                if material not in valid_tools:
+            for tool in parsed_value:
+                if tool not in valid_tools:
                     raise serializers.ValidationError(
                         {
-                            "harmful_material": "You entered a material that "
-                            + f"is not allowed ({material})."
+                            "harmful_tool_category": "You entered a "
+                            + f"tool category that is not allowed ({tool})."
                         }
                     )
 
         return parsed_value
 
-    def validate_harmful_materials(self, value):
+    def validate_harmful_material_categories(self, value):
         """
-        Validates harmful materials, ensuring all names exist in the database.
+        Validates harmful material_categories, ensuring all names exist
+        in the database.
         """
 
         # Since this is multipart/formdata, parse the stringified object
@@ -150,17 +158,18 @@ class PostSerializer(serializers.ModelSerializer):
 
         # Fetch all valid names from the database
         valid_materials = set(
-            HarmfulMaterial.objects.filter(name__in=parsed_value).values_list(
-                "name", flat=True
-            )
+            HarmfulMaterialCategory.objects.filter(
+                category__in=parsed_value
+            ).values_list("category", flat=True)
         )
         if isinstance(parsed_value, list) and parsed_value:
             for material in parsed_value:
                 if material not in valid_materials:
                     raise serializers.ValidationError(
                         {
-                            "harmful_material": "You entered a material that "
-                            + f"is not allowed ({material})."
+                            "harmful_material_category": "You entered "
+                            + "a material category that is not allowed "
+                            + f'({material}).'
                         }
                     )
 
@@ -169,9 +178,14 @@ class PostSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         show_debugging = True
         log_debug(show_debugging, "Creating a post", validated_data)
-        # Pop harmful_tools and harmful_materials from validated data
-        harmful_tools_data = validated_data.pop('harmful_tools', [])
-        harmful_materials_data = validated_data.pop('harmful_materials', [])
+        # Pop harmful_tool_categories and harmful_material_categories from
+        # validated data
+        harmful_tool_categories_data = validated_data.pop(
+            'harmful_tool_categories', []
+        )
+        harmful_material_categories_data = validated_data.pop(
+            'harmful_material_categories', []
+        )
         tools_data = validated_data.pop('tools', [])
         materials_data = validated_data.pop('materials', [])
 
@@ -191,14 +205,16 @@ class PostSerializer(serializers.ModelSerializer):
             Material.objects.create(post=post, **material)
 
         # Add ManyToMany relationships
-        for tool_name in harmful_tools_data:
-            tool, _ = HarmfulTool.objects.get_or_create(name=tool_name)
-            post.harmful_tools.add(tool)
-
-        for material_name in harmful_materials_data:
-            material, _ = HarmfulMaterial.objects.get_or_create(
-                name=material_name
+        for tool_category in harmful_tool_categories_data:
+            tool, _ = HarmfulToolCategory.objects.get_or_create(
+                category=tool_category
             )
-            post.harmful_materials.add(material)
+            post.harmful_tool_categories.add(tool)
+
+        for material_category in harmful_material_categories_data:
+            material, _ = HarmfulMaterialCategory.objects.get_or_create(
+                category=material_category
+            )
+            post.harmful_material_categories.add(material)
 
         return post

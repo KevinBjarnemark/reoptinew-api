@@ -6,20 +6,20 @@ from cloudinary.models import CloudinaryField
 User = get_user_model()
 
 
-class HarmfulTool(models.Model):
-    name = models.CharField(max_length=50, unique=True)
+class HarmfulToolCategory(models.Model):
+    category = models.CharField(max_length=50, unique=True)
 
     # Display in admin portal
     def __str__(self):
-        return str(self.name)
+        return str(self.category)
 
 
-class HarmfulMaterial(models.Model):
-    name = models.CharField(max_length=50, unique=True)
+class HarmfulMaterialCategory(models.Model):
+    category = models.CharField(max_length=50, unique=True)
 
     # Display in admin portal
     def __str__(self):
-        return str(self.name)
+        return str(self.category)
 
 
 class Post(models.Model):
@@ -28,14 +28,15 @@ class Post(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     public = models.BooleanField(default=True)
+    harmful_post = models.BooleanField(default=False)
     instructions = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     tags = models.CharField(max_length=255, null=True, blank=True)
-    harmful_tools = models.ManyToManyField(
-        HarmfulTool, blank=True, related_name='posts'
+    harmful_tool_categories = models.ManyToManyField(
+        HarmfulToolCategory, blank=True, related_name='posts'
     )
-    harmful_materials = models.ManyToManyField(
-        HarmfulMaterial, blank=True, related_name='posts'
+    harmful_material_categories = models.ManyToManyField(
+        HarmfulMaterialCategory, blank=True, related_name='posts'
     )
     # Image index for posts with no image attached
     default_image_index = models.IntegerField(default=1)

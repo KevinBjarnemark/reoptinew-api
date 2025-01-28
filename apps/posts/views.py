@@ -121,7 +121,7 @@ class PostAPIView(APIView):
                     "You must be at least "
                     + str(VALIDATION_RULES['AGE_RESTRICTED_CONTENT_AGE'])
                     + " years old to create a post that contain harmful "
-                    + "tools and materials.",
+                    + "tool and material categories.",
                     log="Blocked a user from creating a post because the"
                     + " user is not old enough.",
                 )
@@ -164,8 +164,8 @@ class PostAPIView(APIView):
             # If user is not authenticated, block access to harmful content
             if not self.request.user.is_authenticated:
                 if (
-                    posts.harmful_materials.exists()
-                    or posts.harmful_tools.exists()
+                    posts.harmful_material_categories.exists()
+                    or posts.harmful_tool_categories.exists()
                 ):
                     raise PermissionDenied(
                         "You are not allowed to access this post."
@@ -174,8 +174,8 @@ class PostAPIView(APIView):
             # If authenticated, check the user's profile and age
             if not self.check_maturity():
                 if (
-                    posts.harmful_materials.exists()
-                    or posts.harmful_tools.exists()
+                    posts.harmful_material_categories.exists()
+                    or posts.harmful_tool_categories.exists()
                 ):
                     raise PermissionDenied(
                         "You are not allowed to access this post."
@@ -187,18 +187,18 @@ class PostAPIView(APIView):
 
         # If the user is a guest
         if not self.request.user.is_authenticated:
-            # Only return posts without harmful materials and tools
+            # Only return posts without harmful material categories and tools
             return posts.filter(
-                harmful_materials__isnull=True,
-                harmful_tools__isnull=True,
+                harmful_material_categories__isnull=True,
+                harmful_tool_categories__isnull=True,
             )
 
         # if authenticated, filter out age restricted content
         if not self.check_maturity():
-            # Return posts without harmful materials and tools
+            # Return posts without harmful material and tool categories
             return posts.filter(
-                harmful_materials__isnull=True,
-                harmful_tools__isnull=True,
+                harmful_material_categories__isnull=True,
+                harmful_tool_categories__isnull=True,
             )
 
         # If the user is mature, return all posts
