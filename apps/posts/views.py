@@ -1,4 +1,3 @@
-import json
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import (
@@ -8,20 +7,33 @@ from rest_framework.permissions import (
 )
 from rest_framework.exceptions import PermissionDenied
 from django.db.models import Q
-from static.py.utils.error_handling import throw_error
-from static.py.utils.logging import log_debug
-from static.py.utils.helpers import user_is_mature
-from apps.users.constants import VALIDATION_RULES
+from static.utils.error_handling import throw_error
+from static.utils.logging import log_debug
+from static.utils.helpers import user_is_mature
+from static.utils.convert import convert_str_to_complex_obj
+from static.utils.constants import GLOBAL_VALIDATION_RULES
 from .serializers import PostSerializer
 from .models import Post, Like
+
+
+def age_restricted_error():
+    return throw_error(
+        400,
+        "You must be at least "
+        + str(GLOBAL_VALIDATION_RULES["AGE_RESTRICTED_CONTENT_AGE"])
+        + " years old to create, edit, and view a post that is  "
+        + "considered to be inappropriate for children.",
+        log="Blocked a user from viewing, updating, or creating a post, "
+        + "the user is not old enough.",
+    )
 
 
 class PostAPIView(APIView):
     # Override permissions for specific actions
     def get_permissions(self):
-        if self.request.method == 'POST':
-            action = self.request.data.get('action', 'create')
-            if action == 'filter':
+        if self.request.method == "POST":
+            action = self.request.data.get("action", "create")
+            if action == "filter":
                 return [
                     # Allow unauthenticated users to filter posts
                     AllowAny()
@@ -42,7 +54,7 @@ class PostAPIView(APIView):
                 )
 
                 serializer = PostSerializer(
-                    single_post, context={'request': request}
+                    single_post, context={"request": request}
                 )
                 log_debug(
                     show_post_data_debugging,
@@ -54,7 +66,7 @@ class PostAPIView(APIView):
             # List all posts
             posts = self.filter_age_restricted_content(Post.objects.all())
             serializer = PostSerializer(
-                posts, many=True, context={'request': request}
+                posts, many=True, context={"request": request}
             )
 
             log_debug(
@@ -74,26 +86,40 @@ class PostAPIView(APIView):
             return Response(
                 {
                     "message": "You must be authenticated and at least "
-                    + f"{VALIDATION_RULES['AGE_RESTRICTED_CONTENT_AGE']} "
-                    + "years old to view this post."
+                    + str(
+                        GLOBAL_VALIDATION_RULES["AGE_RESTRICTED_CONTENT_AGE"]
+                    )
+                    + " years old to view this post."
                 },
                 status=403,
             )
 
     def post(self, request):
+        show_debugging = True
         try:
+            log_debug(
+                show_debugging,
+                "POST request! (posts)",
+                request.data,
+            )
             # Request type
-            action = request.data.get('action', 'create')
+            action = request.data.get("action", "create")
 
             # Handle search/filter action
-            if action == 'filter':
+            if action == "filter":
                 try:
-                    filters = request.data.get('filters', {})
+                    log_debug(
+                        show_debugging,
+                        "This is a filter request, not a post "
+                        + "creation request",
+                        "",
+                    )
+                    filters = request.data.get("filters", {})
                     posts = self.filter_posts(filters)
                     serializer = PostSerializer(
                         posts,
                         many=True,
-                        context={'request': request},
+                        context={"request": request},
                     )
                     return Response(serializer.data, status=200)
                 except Exception as e:
@@ -101,33 +127,26 @@ class PostAPIView(APIView):
                         500, "Unable to filter posts.", log=str(e)
                     )
 
-            # Handle post creation
-            # Request body mutable copy
+            # Handle post creation (default)
+
+            # Request body (mutable copy)
             data = request.data.copy()
-
-            # Convert FormData (JavaScript) to lists
-            if "tools" in data:
-                # Convert JSON string to list
-                data["tools"] = json.loads(data["tools"])
-
-            if "materials" in data:
-                # Convert JSON string to list
-                data["materials"] = json.loads(data["materials"])
+            # Convert stringified FormData (js)
+            convert_str_to_complex_obj(
+                show_debugging, data, ["tools", "materials"]
+            )
 
             # Return an error if the user is not mature enough to create post
             if not self.check_maturity():
-                return throw_error(
-                    400,
-                    "You must be at least "
-                    + str(VALIDATION_RULES['AGE_RESTRICTED_CONTENT_AGE'])
-                    + " years old to create a post that contain harmful "
-                    + "tool and material categories.",
-                    log="Blocked a user from creating a post because the"
-                    + " user is not old enough.",
+                log_debug(
+                    show_debugging,
+                    "User is not old enough to create post.",
+                    "",
                 )
+                return age_restricted_error()
 
             serializer = PostSerializer(
-                data=data, context={'request': request}
+                data=data, context={"request": request}
             )
             if serializer.is_valid():
                 serializer.save()  # Create post
@@ -141,15 +160,72 @@ class PostAPIView(APIView):
         except Exception as e:
             return throw_error(500, "Unable to create post.", log=str(e))
 
+    def put(self, request, pk=None):
+        show_debugging = True
+        try:
+            log_debug(
+                show_debugging,
+                f"PUT request! (posts) post id: {pk}",
+                request.data,
+            )
+            if not pk:
+                return throw_error(400, "Post ID is required for updates.")
+
+            # Fetch the post
+            try:
+                post = Post.objects.get(pk=pk)
+            except Post.DoesNotExist:
+                return throw_error(404, "Post not found.")
+
+            # User must be the owner of the post
+            if post.user != request.user:
+                return throw_error(
+                    403, "You are not allowed to edit this post."
+                )
+
+            # Request body (mutable copy)
+            data = request.data.copy()
+            # Convert stringified FormData (js)
+            convert_str_to_complex_obj(
+                show_debugging, data, ["tools", "materials"]
+            )
+
+            # Return an error if the user is not mature enough to create post
+            if not self.check_maturity():
+                log_debug(
+                    show_debugging,
+                    "User is not old enough to update this post with "
+                    + "the current content.",
+                    "",
+                )
+                return age_restricted_error()
+
+            # Validate and update the post
+            serializer = PostSerializer(
+                post, data=data, context={"request": request}
+            )
+            if serializer.is_valid():
+                serializer.save()  # Update the post
+                return Response(serializer.data, status=200)
+
+            return throw_error(
+                400,
+                "Validation failed.",
+                log=serializer.errors,
+                error_details=serializer.errors,
+            )
+        except Exception as e:
+            return throw_error(500, "Unable to update post.", log=str(e))
+
     def check_maturity(self):
         """
         Returns True if the user is older than the
         AGE_RESTRICTED_CONTENT_AGE constant variable, False otherwise.
         """
-        profile = getattr(self.request.user, 'profile', None)
+        profile = getattr(self.request.user, "profile", None)
         if not user_is_mature(
             profile.birth_date,
-            VALIDATION_RULES["AGE_RESTRICTED_CONTENT_AGE"],
+            GLOBAL_VALIDATION_RULES["AGE_RESTRICTED_CONTENT_AGE"],
         ):
             return False
         return True
@@ -211,8 +287,8 @@ class PostAPIView(APIView):
         posts = self.filter_age_restricted_content(Post.objects.all())
 
         # Apply filters dynamically
-        user_id = filters.get('user_id')  # Could be ID or username
-        search_query = filters.get('search_query', [])
+        user_id = filters.get("user_id")  # Could be ID or username
+        search_query = filters.get("search_query", [])
 
         if user_id:
             if str(user_id).isdigit():
@@ -269,8 +345,8 @@ class LikeView(APIView):
                 like.delete()
                 return Response(
                     {
-                        'message': 'Like removed successfully!',
-                        'post_id': post_id,
+                        "message": "Like removed successfully!",
+                        "post_id": post_id,
                     },
                     status=200,
                 )

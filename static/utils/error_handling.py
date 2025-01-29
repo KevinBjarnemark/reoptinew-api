@@ -1,5 +1,5 @@
 from rest_framework.response import Response
-from static.py.utils.inspect_stack import get_file_name_of_caller
+from static.utils.inspect_stack import get_file_name_of_caller
 from .logging import logger
 
 

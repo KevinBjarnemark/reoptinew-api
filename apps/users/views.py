@@ -1,4 +1,4 @@
-from static.py.utils.error_handling import throw_error
+from static.utils.error_handling import throw_error
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
@@ -8,7 +8,7 @@ from rest_framework.permissions import (
 )
 from django.shortcuts import get_object_or_404
 from rest_framework_simplejwt.tokens import RefreshToken
-from static.py.utils.logging import log_debug
+from static.utils.logging import log_debug
 from .models import Profile as ProfileModel
 from .serializers import (
     ProfileSerializer,
@@ -21,7 +21,7 @@ from .serializers import (
 class UserProfile(APIView):
     # Only allow GET requests
     permission_classes = [IsAuthenticated]
-    http_method_names = ['get']
+    http_method_names = ["get"]
     serializer_class = ProfileSerializer
 
     def get_queryset(self):
@@ -33,7 +33,7 @@ class UserProfile(APIView):
             profile = ProfileModel.objects.get(user=request.user)
             # Serialize fields
             serializer = ProfileSerializer(
-                profile, context={'request': request}
+                profile, context={"request": request}
             )
             # Return the profile
             return Response(serializer.data, status=200)
@@ -59,7 +59,7 @@ class Profile(APIView):
 
     # Only allow GET requests
     permission_classes = [AllowAny]
-    http_method_names = ['get']
+    http_method_names = ["get"]
     serializer_class = ProfileSerializer
 
     def get_queryset(self):
@@ -84,7 +84,7 @@ class Profile(APIView):
 
             # Serialize fields
             serializer = ProfileSerializer(
-                profile, context={'request': request}
+                profile, context={"request": request}
             )
             # Return the profile
             return Response(serializer.data, status=200)
@@ -111,7 +111,7 @@ class SignUp(APIView):
 
     permission_classes = [AllowAny]
     # Only allow POST requests
-    http_method_names = ['post']
+    http_method_names = ["post"]
     # Enable multipart form-data parsing for images
     parser_classes = [MultiPartParser]
     serializer_class = SignUpSerializer
@@ -121,7 +121,7 @@ class SignUp(APIView):
         try:
             # Serialize incoming data
             serializer = SignUpSerializer(
-                data=request.data, context={'request': request}
+                data=request.data, context={"request": request}
             )
             if not serializer.is_valid():
                 return throw_error(
@@ -161,7 +161,7 @@ class LogIn(APIView):
 
     permission_classes = [AllowAny]
     # Only allow POST requests
-    http_method_names = ['post']
+    http_method_names = ["post"]
     # Enable multipart form-data parsing for images
     parser_classes = [MultiPartParser]
     serializer_class = LogInSerializer
@@ -178,7 +178,7 @@ class LogIn(APIView):
                     log=f"Validation errors: {serializer.errors}",
                     error_details=serializer.errors,
                 )
-            user = serializer.validated_data['user']
+            user = serializer.validated_data["user"]
             log_debug(show_debugging, "User authenticated", user.username)
 
             # Generate JWT tokens
@@ -256,7 +256,7 @@ class DeleteAccount(APIView):
         try:
             # Serialize incoming data
             serializer = DeleteAccountSerializer(
-                data=request.data, context={'request': request}
+                data=request.data, context={"request": request}
             )
             if not serializer.is_valid():
                 return throw_error(

@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
-from static.py.utils.environment import image_url
+from static.utils.environment import image_url
+from static.utils.validators import validate_image_extension
 from .constants import VALIDATION_RULES
 from .models import Profile
 
@@ -11,27 +12,27 @@ User = get_user_model()
 
 
 class ProfileSerializer(serializers.ModelSerializer):
-    username = serializers.ReadOnlyField(source='user.username')
-    user_id = serializers.ReadOnlyField(source='user.id')
+    username = serializers.ReadOnlyField(source="user.username")
+    user_id = serializers.ReadOnlyField(source="user.id")
 
     class Meta:
         model = Profile
         fields = [
-            'id',
-            'user_id',
-            'birth_date',
-            'image',
+            "id",
+            "user_id",
+            "birth_date",
+            "image",
             "username",
         ]
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         # Handle image
-        representation['image'] = image_url(instance.image)
+        representation["image"] = image_url(instance.image)
         # Remove birth_date if the user is not the owner
-        request = self.context.get('request')
+        request = self.context.get("request")
         if request.user != instance.user:
-            representation.pop('birth_date', None)
+            representation.pop("birth_date", None)
         return representation
 
 
@@ -55,22 +56,22 @@ class SignUpSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'username',
-            'password',
-            'confirm_password',
-            'birth_date',
-            'image',
+            "username",
+            "password",
+            "confirm_password",
+            "birth_date",
+            "image",
         ]
 
     # Overwrite default error messages with custom errors
     def __init__(self, *args, **kwargs):
         super(SignUpSerializer, self).__init__(*args, **kwargs)
-        self.fields['username'].error_messages[
-            'required'
-        ] = 'You must enter a username.'
-        self.fields['username'].error_messages[
-            'blank'
-        ] = 'Username is missing.'
+        self.fields["username"].error_messages[
+            "required"
+        ] = "You must enter a username."
+        self.fields["username"].error_messages[
+            "blank"
+        ] = "Username is missing."
 
     def validate(self, data):
         # Normalize username to lowercase for case-insensitive comparison
@@ -87,38 +88,31 @@ class SignUpSerializer(serializers.ModelSerializer):
                 {"username": "This username is already taken."}
             )
         # Check if passwords match
-        if data['password'] != data['confirm_password']:
+        if data["password"] != data["confirm_password"]:
             raise serializers.ValidationError(
                 {"password": "Passwords do not match."}
             )
 
-        # Access the image from request.FILES
-        request = self.context.get('request')
-        image = request.FILES.get('image', None)
-        # Validate image file type
-        if image:
-            valid_extensions = VALIDATION_RULES["IMAGE"]["VALID_EXTENSIONS"]
-            extension = image.name.split('.')[-1].lower()
-            if extension not in valid_extensions:
-                raise serializers.ValidationError(
-                    {"image": "Invalid file type."}
-                )
+        # Validate image
+        request = self.context.get("request")
+        image = request.FILES.get("image", None)
+        data["image"] = validate_image_extension(image)
 
         return data
 
     def create(self, validated_data):
-        # Remove the second password
-        validated_data.pop('confirm_password')
-        birth_date = validated_data.pop('birth_date', None)
+        # Pop validated_data entries
+        validated_data.pop("confirm_password")
+        birth_date = validated_data.pop("birth_date", None)
 
         # Access the image from request.FILES
-        request = self.context.get('request')
-        image = request.FILES.get('image', None)
+        request = self.context.get("request")
+        image = request.FILES.get("image", None)
 
         # Create the user instance
         user = User.objects.create_user(
-            username=validated_data['username'],
-            password=validated_data['password'],
+            username=validated_data["username"],
+            password=validated_data["password"],
         )
 
         # Create profile linked to the user
@@ -137,15 +131,15 @@ class LogInSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'password']
+        fields = ["username", "password"]
 
     def validate(self, data):
         user = authenticate(
-            username=data['username'], password=data['password']
+            username=data["username"], password=data["password"]
         )
         if not user:
             raise serializers.ValidationError("Invalid credentials.")
-        data['user'] = user
+        data["user"] = user
         return data
 
 
@@ -156,7 +150,7 @@ class DeleteAccountSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, required=True)
 
     def validate_password(self, value):
-        user = self.context['request'].user
+        user = self.context["request"].user
         if not user.check_password(value):
             raise serializers.ValidationError("Incorrect password.")
         return value

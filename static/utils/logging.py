@@ -1,8 +1,7 @@
-
 import logging
 from django.conf import settings
-from static.py.utils.environment import is_development
-from static.py.utils.inspect_stack import get_file_name_of_caller
+from static.utils.environment import is_development
+from static.utils.inspect_stack import get_file_name_of_caller
 
 
 logger = logging.getLogger("app")
@@ -20,9 +19,8 @@ def log_debug(log, name, *args):
     if (log or settings.SHOW_ALL_LOGS) and is_development():
         # Get the file name of the caller
         caller_file = get_file_name_of_caller(2)
-        message = (
-            f"(Occurred in {caller_file}) {name}: " +
-            " ".join(map(str, args))
+        message = f"(Occurred in {caller_file}) {name}: " + " ".join(
+            map(str, args)
         )
         logger.debug(message)
 
@@ -39,9 +37,8 @@ def log_message(log, name, *args):
     if (log or settings.SHOW_ALL_LOGS) and is_development():
         # Get the file name of the caller
         caller_file = get_file_name_of_caller(2)
-        message = (
-            f"(Occurred in {caller_file}) {name}: " +
-            " ".join(map(str, args))
+        message = f"(Occurred in {caller_file}) {name}: " + " ".join(
+            map(str, args)
         )
         logger.info(message)
 
@@ -58,8 +55,7 @@ def log_error(log, name, *args):
     if (log or settings.SHOW_ALL_LOGS) and is_development():
         # Get the file name of the caller
         caller_file = get_file_name_of_caller(2)
-        message = (
-            f"(Occurred in {caller_file}) {name}: " +
-            " ".join(map(str, args))
+        message = f"(Occurred in {caller_file}) {name}: " + " ".join(
+            map(str, args)
         )
         logger.error(message)

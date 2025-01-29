@@ -1,16 +1,16 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from static.py.utils.environment import image_url
-from static.py.utils.logging import log_debug
-from static.py.utils.convert import parse_stringified_object
+from static.utils.environment import image_url
+from static.utils.logging import log_debug
+from static.utils.validators import validate_image_extension
 from .models import (
     Post,
     HarmfulMaterialCategory,
     HarmfulToolCategory,
-    Tool,
-    Material,
 )
 from .fields.list_of_primitive_dict_field import ListOfPrimitiveDictField
+from .utils import handle_post_submission, validate_harmful_category
+
 
 # Securely hash passwords before storing in database
 User = get_user_model()
@@ -38,24 +38,27 @@ class PostSerializer(serializers.ModelSerializer):
     tools = ListOfPrimitiveDictField(
         write_only=True, required=False, default=list
     )
+    image = serializers.ImageField(required=False)
 
     class Meta:
         model = Post
         fields = [
-            'id',
-            'title',
-            'description',
-            'instructions',
-            'harmful_material_categories',
-            'harmful_tool_categories',
-            'created_at',
-            'author',
-            'tools',
-            'materials',
-            'default_image_index',
-            'harmful_post',
+            "id",
+            "title",
+            "description",
+            "instructions",
+            "harmful_material_categories",
+            "harmful_tool_categories",
+            "created_at",
+            "author",
+            "tools",
+            "materials",
+            "default_image_index",
+            "harmful_post",
+            "tags",
+            "image",
         ]
-        read_only_fields = ['id', 'created_at', 'author']
+        read_only_fields = ["id", "created_at", "author"]
 
     def get_author(self, obj):
         """
@@ -65,19 +68,17 @@ class PostSerializer(serializers.ModelSerializer):
         profile = user.profile
 
         return {
-            'id': user.id,
-            'username': user.username,
-            'image': image_url(profile.image),
+            "id": user.id,
+            "username": user.username,
+            "image": image_url(profile.image),
         }
 
     def to_representation(self, instance):
         """
-        Custom representation for ManyToMany fields.
-
-        This method ensures scalability by connecting ManyToMany fields
-        into the post, instead of writing duplicate data.
+        Custom representation
         """
         representation = super().to_representation(instance)
+
         # Include full object details for ManyToMany relationships
         representation["harmful_tool_categories"] = [
             tool.category for tool in instance.harmful_tool_categories.all()
@@ -87,28 +88,30 @@ class PostSerializer(serializers.ModelSerializer):
             for material in instance.harmful_material_categories.all()
         ]
 
-        # Include related tools and materials
-        representation["tools"] = [
-            {
-                "quantity": tool.quantity,
-                "name": tool.name,
-                "description": tool.description,
-            }
-            for tool in instance.tools.all()
-        ]
+        # Helper function for handling harmful content
+        def serialize_related_objects(queryset):
+            return [
+                {
+                    field: getattr(obj, field)
+                    for field in ["quantity", "name", "description"]
+                }
+                for obj in queryset
+            ]
 
-        representation["materials"] = [
-            {
-                "quantity": material.quantity,
-                "name": material.name,
-                "description": material.description,
-            }
-            for material in instance.materials.all()
-        ]
+        # Include tools
+        representation["tools"] = serialize_related_objects(
+            instance.tools.all()
+        )
+        # Include materials
+        representation["materials"] = serialize_related_objects(
+            instance.materials.all()
+        )
 
-        request = self.context.get('request', None)
+        # Include likes
+        request = self.context.get("request", None)
         # Include likes object
         representation["likes"] = {
+            # Determine if the user has liked this post
             "user_has_liked": (
                 instance.likes.filter(user=request.user).exists()
                 if request
@@ -121,100 +124,91 @@ class PostSerializer(serializers.ModelSerializer):
 
         return representation
 
+    # Pylint disabled because DRF incorrectly assumes this parameter is
+    # always needed.
+    # pylint: disable=unused-argument
+    def validate_image(self, data):
+        # Validate image
+        request = self.context.get("request")
+        image = request.FILES.get("image", None)
+        return validate_image_extension(image)
+
     def validate_harmful_tool_categories(self, value):
-        """
-        Validates harmful tool_categories, ensuring all names exist in
-        the database.
-        """
-        # Since this is multipart/formdata, parse the stringified object
-        parsed_value = parse_stringified_object(value)
-
-        # Fetch all valid names from the database
-        valid_tools = set(
-            HarmfulToolCategory.objects.filter(
-                category__in=parsed_value
-            ).values_list("category", flat=True)
+        return validate_harmful_category(
+            value, HarmfulToolCategory, "tool category"
         )
-        if isinstance(parsed_value, list) and parsed_value:
-            for tool in parsed_value:
-                if tool not in valid_tools:
-                    raise serializers.ValidationError(
-                        {
-                            "harmful_tool_category": "You entered a "
-                            + f"tool category that is not allowed ({tool})."
-                        }
-                    )
-
-        return parsed_value
 
     def validate_harmful_material_categories(self, value):
-        """
-        Validates harmful material_categories, ensuring all names exist
-        in the database.
-        """
-
-        # Since this is multipart/formdata, parse the stringified object
-        parsed_value = parse_stringified_object(value)
-
-        # Fetch all valid names from the database
-        valid_materials = set(
-            HarmfulMaterialCategory.objects.filter(
-                category__in=parsed_value
-            ).values_list("category", flat=True)
+        return validate_harmful_category(
+            value, HarmfulMaterialCategory, "material category"
         )
-        if isinstance(parsed_value, list) and parsed_value:
-            for material in parsed_value:
-                if material not in valid_materials:
-                    raise serializers.ValidationError(
-                        {
-                            "harmful_material_category": "You entered "
-                            + "a material category that is not allowed "
-                            + f'({material}).'
-                        }
-                    )
-
-        return parsed_value
 
     def create(self, validated_data):
         show_debugging = True
         log_debug(show_debugging, "Creating a post", validated_data)
-        # Pop harmful_tool_categories and harmful_material_categories from
-        # validated data
+
+        # Pop validated_data entries
         harmful_tool_categories_data = validated_data.pop(
-            'harmful_tool_categories', []
+            "harmful_tool_categories", []
         )
         harmful_material_categories_data = validated_data.pop(
-            'harmful_material_categories', []
+            "harmful_material_categories", []
         )
-        tools_data = validated_data.pop('tools', [])
-        materials_data = validated_data.pop('materials', [])
+        tools_data = validated_data.pop("tools", [])
+        materials_data = validated_data.pop("materials", [])
 
         # Create the post
         post = Post.objects.create(
             # Associate the authenticated user
-            user=self.context['request'].user,
+            user=self.context["request"].user,
             **validated_data,
         )
-
-        # Add related tools
-        for tool in tools_data:
-            Tool.objects.create(post=post, **tool)
-
-        # Add related materials
-        for material in materials_data:
-            Material.objects.create(post=post, **material)
-
-        # Add ManyToMany relationships
-        for tool_category in harmful_tool_categories_data:
-            tool, _ = HarmfulToolCategory.objects.get_or_create(
-                category=tool_category
-            )
-            post.harmful_tool_categories.add(tool)
-
-        for material_category in harmful_material_categories_data:
-            material, _ = HarmfulMaterialCategory.objects.get_or_create(
-                category=material_category
-            )
-            post.harmful_material_categories.add(material)
+        # Handle related objects
+        handle_post_submission(
+            post,
+            tools_data,
+            materials_data,
+            harmful_tool_categories_data,
+            harmful_material_categories_data,
+        )
 
         return post
+
+    def update(self, instance, validated_data):
+        show_debugging = True
+        log_debug(show_debugging, "Updating a post", validated_data)
+
+        # Pop validated_data entries
+        harmful_tool_categories_data = validated_data.pop(
+            "harmful_tool_categories", []
+        )
+        harmful_material_categories_data = validated_data.pop(
+            "harmful_material_categories", []
+        )
+        tools_data = validated_data.pop("tools", [])
+        materials_data = validated_data.pop("materials", [])
+
+        # Delete the image if it's missing in the request
+        if "image" not in validated_data:
+            if instance.image:
+                # Delete image
+                instance.image.delete(save=False)
+                # Set the field to None
+                instance.image = None
+
+        # Update basic fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # Handle related objects
+        handle_post_submission(
+            instance,
+            tools_data,
+            materials_data,
+            harmful_tool_categories_data,
+            harmful_material_categories_data,
+            clear_existing=True,
+        )
+
+        return instance

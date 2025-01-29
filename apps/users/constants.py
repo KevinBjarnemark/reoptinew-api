@@ -7,11 +7,4 @@ VALIDATION_RULES = {
         "MIN_LENGTH": 8,
         "MAX_LENGTH": 128,
     },
-    "IMAGE": {
-        "VALID_EXTENSIONS": ["jpg", "jpeg", "png", "webp"],
-    },
-    "BIRTH_DATE": {
-        "MINIMUM_AGE": 13,
-    },
-    "AGE_RESTRICTED_CONTENT_AGE": 16,
 }
