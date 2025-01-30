@@ -23,7 +23,7 @@ def test_authentication_actions(client):
     }
 
     # Send POST request to the signup endpoint
-    response = client.post(reverse('signup'), data=signup_data)
+    response = client.post(reverse("signup"), data=signup_data)
     # Parse the JSON response
     response_data = json.loads(response.content.decode("utf-8"))
 

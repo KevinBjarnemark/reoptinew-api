@@ -13,10 +13,10 @@ def welcome_message(request):
 
 
 urlpatterns = [
-    path('', welcome_message),
-    path('admin/', admin.site.urls),
-    path('users/', include('apps.users.urls')),
-    path('posts/', include('apps.posts.urls')),
+    path("", welcome_message),
+    path("admin/", admin.site.urls),
+    path("users/", include("apps.users.urls")),
+    path("posts/", include("apps.posts.urls")),
 ]
 
 if is_development():

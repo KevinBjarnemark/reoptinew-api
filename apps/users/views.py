@@ -15,6 +15,7 @@ from .serializers import (
     SignUpSerializer,
     LogInSerializer,
     DeleteAccountSerializer,
+    ProfileImageUpdateSerializer,
 )
 
 
@@ -288,3 +289,34 @@ class DeleteAccount(APIView):
                 "Something went wrong during account deletion.",
                 log=f"Unhandled exception: {str(e)}",
             )
+
+
+class UpdateProfileImage(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]
+    http_method_names = ["get", "post", "patch"]
+
+    def patch(self, request):
+        try:
+            profile = ProfileModel.objects.get(user=request.user)
+            serializer = ProfileImageUpdateSerializer(
+                profile,
+                data=request.data,
+                context={"request": request},
+                partial=True,
+            )
+
+            if serializer.is_valid():
+                serializer.save()
+                return Response(
+                    {"message": "Profile image updated successfully."},
+                    status=200,
+                )
+            return throw_error(
+                400, "Validation failed.", error_details=serializer.errors
+            )
+
+        except ProfileModel.DoesNotExist:
+            return throw_error(404, "Profile not found.")
+        except Exception as e:
+            return throw_error(500, "Something went wrong.", log=str(e))

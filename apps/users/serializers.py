@@ -11,6 +11,25 @@ from .models import Profile
 User = get_user_model()
 
 
+class ProfileImageUpdateSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(required=True)
+
+    class Meta:
+        model = Profile
+        fields = ["image"]
+
+    def validate_image(self, image):
+        # Validate image
+        request = self.context.get("request")
+        image = request.FILES.get("image", None)
+        return validate_image_extension(image)
+
+    def update(self, instance, validated_data):
+        instance.image = validated_data["image"]
+        instance.save()
+        return instance
+
+
 class ProfileSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source="user.username")
     user_id = serializers.ReadOnlyField(source="user.id")
