@@ -8,7 +8,6 @@ from .views import (
     SignUp,
     LogIn,
     LogOut,
-    UserProfile,
     DeleteAccount,
     UpdateProfileImage,
 )
@@ -20,8 +19,8 @@ urlpatterns = [
         UpdateProfileImage.as_view(),
         name="update_profile_image",
     ),
+    path("profile/", Profile.as_view(), name="profile_no_identifier"),
     path("profile/<str:identifier>/", Profile.as_view()),
-    path("profile/", UserProfile.as_view(), name="profile"),
     path("signup/", SignUp.as_view(), name="signup"),
     path("login/", LogIn.as_view(), name="login"),
     path("logout/", LogOut.as_view(), name="logout"),

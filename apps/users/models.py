@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth.models import AbstractUser
 from static.utils.constants import GLOBAL_VALIDATION_RULES
 from static.utils.environment import is_development
-from static.utils.helpers import user_is_mature
+from static.utils.helpers import check_age
 
 
 # Custom user
@@ -60,12 +60,11 @@ class Profile(models.Model):
             raise ValidationError("Birth date cannot be in the future.")
 
         # Ensure the user is at least 13 years old
-        if self.birth_date:
-            if not user_is_mature(
-                self.birth_date, GLOBAL_VALIDATION_RULES["ACCOUNT_MIN_AGE"]
-            ):
+        if not self.birth_date:
+            raise ValidationError("Birth date is missing in profile")
+        else:
+            user_age = check_age(self.birth_date)
+            if user_age <= GLOBAL_VALIDATION_RULES["ACCOUNT_MIN_AGE"]:
                 raise ValidationError(
                     "You must be at least 13 years old to create an account."
                 )
-        else:
-            raise ValidationError("Birth date is missing in profile")

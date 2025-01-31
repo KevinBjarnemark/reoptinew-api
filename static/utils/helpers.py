@@ -1,7 +1,7 @@
 from django.utils.timezone import now
 
 
-def user_is_mature(birth_date, age_restriction):
+def check_age(birth_date):
     """
     Determines if a user meets the minimum age requirement.
 
@@ -29,4 +29,4 @@ def user_is_mature(birth_date, age_restriction):
         if birthday_not_passed:
             age -= 1
 
-        return age > age_restriction
+        return age

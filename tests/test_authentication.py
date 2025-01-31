@@ -41,7 +41,9 @@ def test_authentication_actions(client):
     auth_headers = {"Authorization": f"Bearer {access_token}"}
 
     # Send a GET request to a protected endpoint
-    protected_response = client.get(reverse("profile"), headers=auth_headers)
+    protected_response = client.get(
+        reverse("profile_no_identifier"), headers=auth_headers
+    )
     # Parse the JSON response
     protected_response_data = json.loads(
         protected_response.content.decode("utf-8")

@@ -19,41 +19,6 @@ from .serializers import (
 )
 
 
-class UserProfile(APIView):
-    # Only allow GET requests
-    permission_classes = [IsAuthenticated]
-    http_method_names = ["get"]
-    serializer_class = ProfileSerializer
-
-    def get_queryset(self):
-        return ProfileModel.objects.all()
-
-    def get(self, request):
-        try:
-            # Get the profile by primary key
-            profile = ProfileModel.objects.get(user=request.user)
-            # Serialize fields
-            serializer = ProfileSerializer(
-                profile, context={"request": request}
-            )
-            # Return the profile
-            return Response(serializer.data, status=200)
-        # Handle profile doens't exist
-        except ProfileModel.DoesNotExist:
-            return throw_error(
-                404,
-                "Profile not found.",
-                log=f"Profile not found for user ID: {request.user}",
-            )
-        # Handle unexpected errors
-        except Exception as e:
-            return throw_error(
-                500,
-                "Something went wrong.",
-                log=f"Unhandled exception: {str(e)}",
-            )
-
-
 class Profile(APIView):
     """Returns a profile based on either the userid or
     the username"""
@@ -66,7 +31,7 @@ class Profile(APIView):
     def get_queryset(self):
         return ProfileModel.objects.all()
 
-    def get(self, request, identifier):
+    def get(self, request, identifier=None):
         show_debugging = True
         try:
             log_debug(
@@ -74,14 +39,23 @@ class Profile(APIView):
                 "Loading a user's profile, received identifier:",
                 identifier,
             )
-            if str(identifier).isdigit():
-                # Lookup profile by user ID
-                profile = get_object_or_404(ProfileModel, user__id=identifier)
+            # Get the user's profile if there's no identifier in the
+            # request.
+            if not identifier and request.user:
+                profile = ProfileModel.objects.get(user=request.user)
             else:
-                # Lookup profile by username
-                profile = get_object_or_404(
-                    ProfileModel, user__username__iexact=identifier
-                )
+                # Get a specific user's profile when there's an identifier
+                # in the request.
+                if str(identifier).isdigit():
+                    # Lookup profile by user ID
+                    profile = get_object_or_404(
+                        ProfileModel, user__id=identifier
+                    )
+                else:
+                    # Lookup profile by username
+                    profile = get_object_or_404(
+                        ProfileModel, user__username__iexact=identifier
+                    )
 
             # Serialize fields
             serializer = ProfileSerializer(
@@ -313,10 +287,18 @@ class UpdateProfileImage(APIView):
                     status=200,
                 )
             return throw_error(
-                400, "Validation failed.", error_details=serializer.errors
+                400,
+                "Validation failed.",
+                log="Rejected update post request (serializer).",
+                error_details=serializer.errors,
             )
 
         except ProfileModel.DoesNotExist:
-            return throw_error(404, "Profile not found.")
+            return throw_error(
+                404,
+                "Profile not found.",
+                log="User tried to update a post but "
+                + "the profile model doens't exist.",
+            )
         except Exception as e:
             return throw_error(500, "Something went wrong.", log=str(e))
