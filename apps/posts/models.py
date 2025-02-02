@@ -87,3 +87,26 @@ class Like(models.Model):
         User, on_delete=models.CASCADE, related_name="likes"
     )
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class Rating(models.Model):
+    """This model is related to the Post model"""
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["post", "user"], name="unique_rating"
+            )
+        ]
+
+    post = models.ForeignKey(
+        Post, on_delete=models.CASCADE, related_name="post_ratings"
+    )
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="post_ratings"
+    )
+    saves_money = models.PositiveIntegerField(default=0)
+    saves_time = models.PositiveIntegerField(default=0)
+    is_useful = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)

@@ -12,7 +12,7 @@ from static.utils.helpers import check_age
 from static.utils.convert import convert_str_to_complex_obj
 from static.utils.constants import GLOBAL_VALIDATION_RULES
 from .serializers import PostSerializer
-from .models import Post, Like
+from .models import Post, Like, Rating
 
 
 def age_restricted_error():
@@ -503,3 +503,88 @@ class DeletePostView(APIView):
                 "Something went wrong during post deletion.",
                 log=f"Unhandled exception: {str(e)}",
             )
+
+
+class RatingView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, post_id):
+        show_debugging = True
+        try:
+            log_debug(
+                show_debugging,
+                "User submitted a rating",
+                type(request.data),
+            )
+            try:
+                post = Post.objects.get(id=post_id)
+            except Post.DoesNotExist:
+                return throw_error(
+                    404,
+                    "Post doesn't exist.",
+                    log="User tried to rate a post that doesn't exist.",
+                )
+
+            # Extract rating values
+            saves_money = request.data.get("saves_money", 0)
+            saves_time = request.data.get("saves_time", 0)
+            is_useful = request.data.get("is_useful", 0)
+
+            # Make sure inputs are within range
+            if not all(
+                isinstance(x, int) and 0 <= x <= 100
+                for x in [saves_money, saves_time, is_useful]
+            ):
+                return throw_error(
+                    400,
+                    "Invalid rating values. Must be integers between "
+                    + "0 and 100.",
+                )
+
+            # Update or create the rating
+            rating, created = Rating.objects.update_or_create(
+                post=post,
+                user=request.user,
+                defaults={
+                    "saves_money": saves_money,
+                    "saves_time": saves_time,
+                    "is_useful": is_useful,
+                },
+            )
+
+            return Response(
+                {
+                    "message": "Rating submitted successfully!",
+                    "ratings": {
+                        "saves_money": rating.saves_money,
+                        "saves_time": rating.saves_time,
+                        "is_useful": rating.is_useful,
+                    },
+                },
+                status=201 if created else 200,
+            )
+        except Exception as e:
+            return throw_error(500, "Unable to rate post.", log=str(e))
+
+    def delete(self, request, post_id):
+        try:
+            like = Like.objects.filter(
+                post_id=post_id, user=request.user
+            ).first()
+            if like:
+                like.delete()
+                return Response(
+                    {
+                        "message": "Like removed successfully!",
+                        "post_id": post_id,
+                    },
+                    status=200,
+                )
+            return throw_error(
+                500,
+                "Couldn't find like, nothing to remove.",
+                log="Rejected user who tried to remove a like that "
+                + "doens't exist.",
+            )
+        except Exception as e:
+            return throw_error(500, "Unable to remove like.", log=str(e))

@@ -39,6 +39,7 @@ class PostSerializer(serializers.ModelSerializer):
         write_only=True, required=False, default=list
     )
     image = serializers.ImageField(required=False)
+    ratings = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
@@ -57,6 +58,7 @@ class PostSerializer(serializers.ModelSerializer):
             "harmful_post",
             "tags",
             "image",
+            "ratings",
         ]
         read_only_fields = ["id", "created_at", "author"]
 
@@ -71,6 +73,29 @@ class PostSerializer(serializers.ModelSerializer):
             "id": user.id,
             "username": user.username,
             "image": image_url(profile.image),
+        }
+
+    def get_ratings(self, obj):
+        """Retrieve aggregated rating data"""
+        ratings = obj.post_ratings.all()
+
+        if not ratings.exists():
+            return {
+                "saves_money": 0,
+                "saves_time": 0,
+                "is_useful": 0,
+            }
+
+        # Calculate the average scores
+        total_saves_money = sum(r.saves_money for r in ratings)
+        total_saves_time = sum(r.saves_time for r in ratings)
+        total_is_useful = sum(r.is_useful for r in ratings)
+        count = ratings.count()
+
+        return {
+            "saves_money": total_saves_money / count,
+            "saves_time": total_saves_time / count,
+            "is_useful": total_is_useful / count,
         }
 
     def to_representation(self, instance):
