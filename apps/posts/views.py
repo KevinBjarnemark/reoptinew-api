@@ -525,6 +525,15 @@ class RatingView(APIView):
                     log="User tried to rate a post that doesn't exist.",
                 )
 
+            # Prevent users from rating their own posts
+            if post.user == request.user:
+                return throw_error(
+                    403,
+                    "You cannot rate your own post.",
+                    log="User tried to rate their own post, rejected "
+                    + "request",
+                )
+
             # Extract rating values
             saves_money = request.data.get("saves_money", 0)
             saves_time = request.data.get("saves_time", 0)
