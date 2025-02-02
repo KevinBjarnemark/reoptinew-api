@@ -7,6 +7,7 @@ from .models import (
     Tool,
     Like,
     Rating,
+    Comment,
 )
 
 admin.site.register(Post)
@@ -16,3 +17,4 @@ admin.site.register(Material)
 admin.site.register(Tool)
 admin.site.register(Like)
 admin.site.register(Rating)
+admin.site.register(Comment)

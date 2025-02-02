@@ -3,11 +3,9 @@ from django.contrib.auth import get_user_model
 from static.utils.environment import image_url
 from static.utils.logging import log_debug
 from static.utils.validators import validate_image_extension
-from .models import (
-    Post,
-    HarmfulMaterialCategory,
-    HarmfulToolCategory,
-)
+from static.utils.helpers import check_age
+from static.utils.constants import GLOBAL_VALIDATION_RULES
+from .models import Post, HarmfulMaterialCategory, HarmfulToolCategory, Comment
 from .fields.list_of_primitive_dict_field import ListOfPrimitiveDictField
 from .utils import handle_post_submission, validate_harmful_category
 
@@ -40,6 +38,7 @@ class PostSerializer(serializers.ModelSerializer):
     )
     image = serializers.ImageField(required=False)
     ratings = serializers.SerializerMethodField()
+    comments = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
@@ -59,8 +58,15 @@ class PostSerializer(serializers.ModelSerializer):
             "tags",
             "image",
             "ratings",
+            "comments",
         ]
-        read_only_fields = ["id", "created_at", "author"]
+        read_only_fields = [
+            "id",
+            "created_at",
+            "author",
+            "ratings",
+            "comments",
+        ]
 
     def get_author(self, obj):
         """
@@ -97,6 +103,46 @@ class PostSerializer(serializers.ModelSerializer):
             "saves_time": total_saves_time / count,
             "is_useful": total_is_useful / count,
         }
+
+    def get_comments(self, obj):
+        request = self.context.get("request")
+
+        if not request or not request.user.is_authenticated:
+            # If the user is not authenticated, only return comments
+            # from safe posts
+            comments = obj.post_comment.filter(post__harmful_post=False)
+        else:
+            # Check if the user is mature
+            user_age = check_age(request.user.profile.birth_date)
+            age_restriction = GLOBAL_VALIDATION_RULES[
+                "AGE_RESTRICTED_CONTENT_AGE"
+            ]
+
+            if user_age < age_restriction:
+                # User is too young, only return safe post comments
+                comments = obj.post_comment.filter(post__harmful_post=False)
+            else:
+                # Mature users can view all comments
+                comments = obj.post_comment.all()
+
+        return [
+            {
+                "id": comment.id,
+                "text": comment.text,
+                "created_at": comment.created_at,
+                "author": {
+                    "id": comment.user.id,
+                    "username": comment.user.username,
+                    "image": (
+                        image_url(comment.user.profile.image)
+                        if hasattr(comment.user, "profile")
+                        and comment.user.profile.image
+                        else None
+                    ),
+                },
+            }
+            for comment in comments
+        ]
 
     def to_representation(self, instance):
         """
@@ -237,3 +283,21 @@ class PostSerializer(serializers.ModelSerializer):
         )
 
         return instance
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ["id", "post", "user", "text", "created_at"]
+        read_only_fields = ["id", "user", "created_at"]
+
+    def create(self, validated_data):
+        """
+        Automatically assign the user before saving.
+        """
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            # Assign authenticated user
+            validated_data["user"] = request.user
+
+        return super().create(validated_data)

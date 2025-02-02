@@ -11,7 +11,7 @@ from static.utils.logging import log_debug
 from static.utils.helpers import check_age
 from static.utils.convert import convert_str_to_complex_obj
 from static.utils.constants import GLOBAL_VALIDATION_RULES
-from .serializers import PostSerializer
+from .serializers import PostSerializer, CommentSerializer
 from .models import Post, Like, Rating
 
 
@@ -508,7 +508,7 @@ class DeletePostView(APIView):
 class RatingView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, post_id):
+    def post(self, request, post_id=None):
         show_debugging = True
         try:
             log_debug(
@@ -575,25 +575,62 @@ class RatingView(APIView):
         except Exception as e:
             return throw_error(500, "Unable to rate post.", log=str(e))
 
-    def delete(self, request, post_id):
+
+class CommentView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, post_id=None):
+        """
+        Retrieves all comments for a given post.
+        """
         try:
-            like = Like.objects.filter(
-                post_id=post_id, user=request.user
-            ).first()
-            if like:
-                like.delete()
-                return Response(
-                    {
-                        "message": "Like removed successfully!",
-                        "post_id": post_id,
-                    },
-                    status=200,
-                )
-            return throw_error(
-                500,
-                "Couldn't find like, nothing to remove.",
-                log="Rejected user who tried to remove a like that "
-                + "doens't exist.",
-            )
+            if not post_id:
+                return throw_error(400, "Post ID is required.")
+
+            post = Post.objects.get(id=post_id)
+            comments = post.post_comment.all()
+            serializer = CommentSerializer(comments, many=True)
+            return Response(serializer.data, status=200)
+
+        except Post.DoesNotExist:
+            return throw_error(404, "Post not found.")
         except Exception as e:
-            return throw_error(500, "Unable to remove like.", log=str(e))
+            return throw_error(500, "Unable to retrieve comments.", log=str(e))
+
+    def post(self, request, post_id=None):
+        show_debugging = True
+        """
+        Allows authenticated users to add a comment to a post.
+        """
+        try:
+            # Ensure post_id is provided
+            if not post_id:
+                return throw_error(400, "Post ID is required.")
+
+            # Ensure the post exists
+            try:
+                post = Post.objects.get(id=post_id)
+            except Post.DoesNotExist:
+                return throw_error(404, "Post not found.")
+
+            # Copy request data and add user and post
+            data = request.data.copy()
+            data["post"] = post.id
+
+            log_debug(show_debugging, "User submitted a comment", data)
+
+            serializer = CommentSerializer(
+                data=data, context={"request": request}
+            )
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=201)
+
+            return throw_error(
+                400, "Invalid comment data.", log=serializer.errors
+            )
+
+        except Post.DoesNotExist:
+            return throw_error(404, "Post not found.")
+        except Exception as e:
+            return throw_error(500, "Unable to add comment.", log=str(e))

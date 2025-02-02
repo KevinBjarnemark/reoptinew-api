@@ -110,3 +110,16 @@ class Rating(models.Model):
     is_useful = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class Comment(models.Model):
+    """This model is related to the Post model"""
+
+    post = models.ForeignKey(
+        Post, on_delete=models.CASCADE, related_name="post_comment"
+    )
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="post_comment"
+    )
+    text = models.TextField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
