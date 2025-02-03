@@ -7,9 +7,10 @@ from rest_framework.permissions import (
     IsAuthenticated,
 )
 from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 from static.utils.logging import log_debug
-from .models import Profile as ProfileModel
+from .models import Profile as ProfileModel, Follow
 from .serializers import (
     ProfileSerializer,
     SignUpSerializer,
@@ -17,6 +18,8 @@ from .serializers import (
     DeleteAccountSerializer,
     ProfileImageUpdateSerializer,
 )
+
+User = get_user_model()
 
 
 class Profile(APIView):
@@ -302,3 +305,48 @@ class UpdateProfileImage(APIView):
             )
         except Exception as e:
             return throw_error(500, "Something went wrong.", log=str(e))
+
+
+class FollowView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk=None):
+        try:
+            if not pk:
+                return throw_error(400, "User ID is required.")
+
+            if request.user.id == int(pk):
+                return throw_error(400, "You cannot follow yourself.")
+
+            user_to_follow = User.objects.get(id=pk)
+
+            follow, created = Follow.objects.get_or_create(
+                follower=request.user, following=user_to_follow
+            )
+            if created:
+                return Response(
+                    {"message": "Followed successfully!", "id": follow.id},
+                    status=201,
+                )
+            return throw_error(400, "You are already following this user.")
+        except User.DoesNotExist:
+            return throw_error(404, "User not found.")
+        except Exception as e:
+            return throw_error(500, "Unable to follow user.", log=str(e))
+
+    def delete(self, request, pk=None):
+        try:
+            if not pk:
+                return throw_error(400, "User ID is required.")
+
+            follow = Follow.objects.filter(
+                follower=request.user, following_id=pk
+            ).first()
+            if follow:
+                follow.delete()
+                return Response(
+                    {"message": "Unfollowed successfully!"}, status=200
+                )
+            return throw_error(400, "You are not following this user.")
+        except Exception as e:
+            return throw_error(500, "Unable to unfollow user.", log=str(e))

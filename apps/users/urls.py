@@ -10,6 +10,7 @@ from .views import (
     LogOut,
     DeleteAccount,
     UpdateProfileImage,
+    FollowView,
 )
 
 
@@ -25,6 +26,7 @@ urlpatterns = [
     path("login/", LogIn.as_view(), name="login"),
     path("logout/", LogOut.as_view(), name="logout"),
     path("delete-account/", DeleteAccount.as_view(), name="delete_account"),
+    path("follow/<int:pk>/", FollowView.as_view(), name="follow-create"),
     path(
         "api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"
     ),

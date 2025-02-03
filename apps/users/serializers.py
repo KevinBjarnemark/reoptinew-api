@@ -52,6 +52,18 @@ class ProfileSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if request.user != instance.user:
             representation.pop("birth_date", None)
+
+        representation["followers"] = list(
+            instance.user.followers.values_list(
+                "follower__username", flat=True
+            )
+        )
+        representation["following"] = list(
+            instance.user.following.values_list(
+                "following__username", flat=True
+            )
+        )
+
         return representation
 
 

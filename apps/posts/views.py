@@ -5,7 +5,7 @@ from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated,
 )
-from django.db.models import Q
+from django.db.models import Q, Count
 from static.utils.error_handling import throw_error
 from static.utils.logging import log_debug
 from static.utils.helpers import check_age
@@ -381,9 +381,10 @@ class PostAPIView(APIView):
         # Apply filters dynamically
         user_id = filters.get("user_id")  # Could be ID or username
         sort_by = filters.get("sort_by", "date")
-        # view = filters.get("view", "show_all_posts")
+        view = filters.get("view", "show_all_posts")
         also_search_in = filters.get("also_search_in", [])
         search_query = filters.get("search_query", [])
+        followers = filters.get("followers", [])
 
         if user_id:
             if str(user_id).isdigit():
@@ -408,11 +409,20 @@ class PostAPIView(APIView):
 
                 posts = posts.filter(search_conditions)
 
+        if view == "only_users_you_follow" and followers:
+            posts = posts.filter(user__username__in=followers)
+
         # Sorting
         if sort_by == "date":
             posts = posts.order_by("-created_at")
-        elif sort_by == "title":
-            posts = posts.order_by("title")
+        elif sort_by == "likes":
+            posts = posts.annotate(like_count=Count("likes")).order_by(
+                "-like_count"
+            )
+        elif sort_by == "comments":
+            posts = posts.annotate(
+                comment_count=Count("post_comment")
+            ).order_by("-comment_count")
 
         return posts
 
@@ -617,10 +627,10 @@ class CommentView(APIView):
             return throw_error(500, "Unable to retrieve comments.", log=str(e))
 
     def post(self, request, post_id=None):
-        show_debugging = True
         """
         Allows authenticated users to add a comment to a post.
         """
+        show_debugging = True
         try:
             # Ensure post_id is provided
             if not post_id:

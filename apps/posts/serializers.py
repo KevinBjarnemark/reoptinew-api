@@ -5,7 +5,12 @@ from static.utils.logging import log_debug
 from static.utils.validators import validate_image_extension
 from static.utils.helpers import check_age
 from static.utils.constants import GLOBAL_VALIDATION_RULES
-from .models import Post, HarmfulMaterialCategory, HarmfulToolCategory, Comment
+from .models import (
+    Post,
+    HarmfulMaterialCategory,
+    HarmfulToolCategory,
+    Comment,
+)
 from .fields.list_of_primitive_dict_field import ListOfPrimitiveDictField
 from .utils import handle_post_submission, validate_harmful_category
 
@@ -192,7 +197,6 @@ class PostSerializer(serializers.ModelSerializer):
             ),
             "count": instance.likes.count(),
         }
-
         return representation
 
     # Pylint disabled because DRF incorrectly assumes this parameter is
