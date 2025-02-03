@@ -380,6 +380,9 @@ class PostAPIView(APIView):
 
         # Apply filters dynamically
         user_id = filters.get("user_id")  # Could be ID or username
+        sort_by = filters.get("sort_by", "date")
+        # view = filters.get("view", "show_all_posts")
+        also_search_in = filters.get("also_search_in", [])
         search_query = filters.get("search_query", [])
 
         if user_id:
@@ -390,10 +393,26 @@ class PostAPIView(APIView):
                 # Filter by username (case-insensitive)
                 posts = posts.filter(user__username__iexact=user_id)
         if search_query:
+            search_conditions = Q()
             for term in search_query:
-                posts = posts.filter(
-                    Q(title__icontains=term) | Q(description__icontains=term)
+                search_conditions |= Q(title__icontains=term) | Q(
+                    description__icontains=term
                 )
+                # Search in additional fields
+                if "tags" in also_search_in:
+                    search_conditions |= Q(tags__icontains=term)
+                if "materials" in also_search_in:
+                    search_conditions |= Q(materials__name__icontains=term)
+                if "tools" in also_search_in:
+                    search_conditions |= Q(tools__name__icontains=term)
+
+                posts = posts.filter(search_conditions)
+
+        # Sorting
+        if sort_by == "date":
+            posts = posts.order_by("-created_at")
+        elif sort_by == "title":
+            posts = posts.order_by("title")
 
         return posts
 
