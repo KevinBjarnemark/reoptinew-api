@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.core.validators import MaxValueValidator, MinValueValidator
 from static.utils.environment import is_development
 from cloudinary.models import CloudinaryField
 
@@ -39,7 +40,9 @@ class Post(models.Model):
         HarmfulMaterialCategory, related_name="posts"
     )
     # Image index for posts with no image attached
-    default_image_index = models.IntegerField(null=True, default=None)
+    default_image_index = models.PositiveIntegerField(
+        default=1, validators=[MinValueValidator(0), MaxValueValidator(3)]
+    )
     if is_development():
         image = models.ImageField(
             upload_to="profile_images/", blank=True, null=True
