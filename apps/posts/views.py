@@ -241,7 +241,7 @@ class PostAPIView(APIView):
         user_age = check_age(profile.birth_date)
         age_restriction = GLOBAL_VALIDATION_RULES["AGE_RESTRICTED_CONTENT_AGE"]
         # User is not mature
-        if user_age <= age_restriction:
+        if user_age < age_restriction:
             log_debug(
                 show_debugging,
                 f"User is {user_age} old and the age restriction "
