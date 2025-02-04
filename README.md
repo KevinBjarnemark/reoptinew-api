@@ -33,9 +33,6 @@ The Reoptinew web app uses a decoupled architecture, separating the frontend and
 
 ## Databases
 
-> ⚠️ **NOTE**  
-> If you need to access the production database locally, you can do so altough it is **strongly discouraged**. Fortunately, since environment variables are managed by Heroku, any accidental changes will be overwritten by Heroku's configuration during deployment. Always restore the `DEVELOPMENT_DATABASE` variable to its original value after making local changes to avoid unintended consequences.
-
 Currently, there are three separate databases that Reoptinew relies on. One for testing, another for development, and another for production. 
 
 - **Testing database**
@@ -54,11 +51,16 @@ Currently, there are three separate databases that Reoptinew relies on. One for 
 
 You can find the complete data schema for all models in this [Google Drive folder](https://drive.google.com/drive/folders/1WrPCJ0CRQjOo84iZWGu7mcBEgYjKUaZA?usp=sharing). 
 
-![Post model](docs/assets/iteration-1/post-model.webp "A spreadsheet of the post model.")
+
+![Post model](docs/assets/iteration_1/post-model.webp "A spreadsheet of the post model.")
 
 ## Error Handling
 
-Reoptinew’s error-handling system is built on three core principles: user experience, security, and troubleshooting.
+Reoptinew’s error-handling system is built on three core principles: 
+
+- **User experience**
+- **Security** 
+- **Troubleshooting**
 
 ### User Experience
 
@@ -83,10 +85,10 @@ Key benefits of this system include:
 
 ### Troubleshooting, Performance, and Logging
 
-Printing to the console with `print()` in production is discouraged due to potential security and performance risks. Reoptinew instead relies on a custom logging system [logging.py](static/py/utils/logging.py) to ensure clarity, consistency, and controlled output.
+Printing to the console with `print()` in production is discouraged due to potential security and performance risks. Reoptinew instead relies on a custom logging system [loggin.py](static/utils/logging.py) to ensure clarity, consistency, and controlled output.
 
 - **Detailed Logs:**  
-The [throw_error()](static/py/utils/error_handling.py) function captures all errors with contextual metadata, such as the file and function where the error occurred.
+The [throw_error()](static/utils/error_handling.py) function captures all errors with contextual metadata, such as the file and function where the error occurred.
 
 ## Technologies
 
@@ -225,7 +227,7 @@ Pytest is a framework used for writing and running tests in Python. It supports 
 
 ### Custom error messages
 
-I've never worked with Django REST Framework (DRF) before, and unexpected challenges appeared when I was trying to customize error messages. My goal was to fully customize all error messages, simplifying complex errors with generic messages. But, I never figured out how to achieve that without allowing unchecked messages to slip through. This was mainly due to the fact that an error thrown in the model (before reaching the validate() method) breaks code execution and stop further validation. 
+I've never worked with Django REST Framework (DRF) before, and unexpected challenges appeared when I was trying to customize error messages. My goal was to fully customize all error messages, simplifying complex errors with generic messages. But, I never figured out how to achieve that without allowing unchecked messages to slip through. This was mainly due to the fact that an error thrown in the model (before reaching the validate method) breaks code execution and stop further validation. 
 
 However, [mariodev](https://stackoverflow.com/users/1566605/mariodev) in [this thread](https://stackoverflow.com/questions/26943985/custom-error-messages-in-django-rest-framework-serializer) had a perfect solution for customizing specified error message before reaching the validate() method.
 

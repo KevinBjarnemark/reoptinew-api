@@ -119,30 +119,8 @@ class PostAPIView(APIView):
                 show_debugging, data, ["tools", "materials"]
             )
 
-            def is_harmful():
-                """
-                Helper function to check if a post contains
-                harmful content.
-                """
-                harmful_material = data.get(
-                    "harmful_material_categories", None
-                )
-                harmful_tools = data.get("harmful_tool_categories", None)
-                harmful_post = data.get("harmful_post", "false")
-
-                # Ensure correct boolean conversion
-                harmful_material = bool(
-                    harmful_material
-                    and harmful_material not in ["[]", [], None]
-                )
-                harmful_tools = bool(
-                    harmful_tools and harmful_tools not in ["[]", [], None]
-                )
-                harmful_post = str(harmful_post).lower() in ["true", "1"]
-                return harmful_material or harmful_tools or harmful_post
-
             # User is not mature enough to create this post
-            if not self.user_is_mature() and is_harmful():
+            if not self.user_is_mature() and self.is_harmful(data):
                 log_debug(
                     show_debugging,
                     "User is not old enough to create post "
@@ -207,7 +185,7 @@ class PostAPIView(APIView):
             )
 
             # Return an error if the user is not mature enough to create post
-            if not self.user_is_mature():
+            if not self.user_is_mature() and self.is_harmful(data):
                 log_debug(
                     show_debugging,
                     "User is not old enough to update this post "
@@ -279,6 +257,25 @@ class PostAPIView(APIView):
             "",
         )
         return True
+
+    def is_harmful(self, data):
+        """
+        Helper method to check if a post contains harmful content.
+        """
+        harmful_material = data.get("harmful_material_categories", None)
+        harmful_tools = data.get("harmful_tool_categories", None)
+        harmful_post = data.get("harmful_post", "false")
+
+        # Ensure correct boolean conversion
+        harmful_material = bool(
+            harmful_material and harmful_material not in ["[]", [], None]
+        )
+        harmful_tools = bool(
+            harmful_tools and harmful_tools not in ["[]", [], None]
+        )
+        harmful_post = str(harmful_post).lower() in ["true", "1"]
+
+        return harmful_material or harmful_tools or harmful_post
 
     def filter_age_restricted_content(self, posts):
         """

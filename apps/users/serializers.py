@@ -113,11 +113,17 @@ class SignUpSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"username": "Username cannot only be digits."}
             )
+        if "." in normalized_username:
+            raise serializers.ValidationError(
+                {"username": "Usernames cannot contain dots ('.')."}
+            )
+
         # Check if username already exists, ignoring case
         if User.objects.filter(username__iexact=normalized_username).exists():
             raise serializers.ValidationError(
                 {"username": "This username is already taken."}
             )
+
         # Check if passwords match
         if data["password"] != data["confirm_password"]:
             raise serializers.ValidationError(
