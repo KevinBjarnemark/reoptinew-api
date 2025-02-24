@@ -9,6 +9,9 @@
 - 🛢️ [Databases](#databases)
 - ❌ [Error handling](#error-handling)
 - 🛠️ [Technologies](#technologies)
+- 🧬🍴 [Cloning and Forking the Repository](#cloning-and-forking-the-repository)
+- 🏃‍♂️ [Run the App](#run-the-app)
+- ☁️ [Deployment, CI/CD Pipeline, and Automatic Testing](#deployment-cicd-pipeline-and-automatic-testing)
 - ✨ [Credits](#credits)
 - 🖊️ [References](#references)
 
@@ -221,9 +224,120 @@ Pytest is a framework used for writing and running tests in Python. It supports 
 
 </details>
 
+## Cloning and Forking the Repository
+
+To avoid repeating ourselves too much we've used the frontend repository as a base for certain information. The cloning and forking have been explained in the [frontend repository's documentation](https://github.com/KevinBjarnemark/reoptinew) and the process should be the same for this repository.
+
+**Note** that Python doesn't create an environment by default, like node does by generating a `node_modules` folder. If you want to containerize this API locally and also ensure it's functionality remains functional over time, follow the steps below.
+
+> ❕ **Info**  
+> There are other ways of creating a virtual environment and the below example is just one way of doing it.
+
+- Open your terminal
+- Go to your project folder
+    > ⚠️ **NOTE**  
+    > We'll create the virtual environment one level above the project folder
+    ```bash
+    cd "path/to/your/project_folder"
+    ```
+- Create the environment 
+    ```bash
+    python -m venv venv
+    ```
+- Activate the environment
+    ```bash
+    .\venv\scripts\activate
+    ```
+- Install dependencies
+    ```bash
+    python -m pip install --upgrade setuptools
+    python -m pip install --upgrade pip
+    pip install -r requirements.txt
+    ```
+- Enter the project
+    ```bash
+    cd reoptinew-api
+    ```
+
+## Run the app
+
+After [cloning or forking the repository](#cloning-and-forking-the-repository) on your side, you're almost there. Follow the steps below.
+
+- Configure environment variables
+    - The [.env.example](.env.example) file serves as your guide for configuring environment variables. 
+
+After configuring the environment variables, you should be able to run the app with the following command.
+
+> ⚠️ **NOTE**  
+> Again, to use a specific IP Address like this is a security feature. Never expose this address in the repository. 
+
+> ❕ **Info**  
+> If you don't know your IP Adress you can find it by simply running `ipconfig` in your terminal. Look for the `IPv4 Address`.
+
+```bash
+py manage.py runserver <your-ip-address>:8000
+```
+
+## Deployment, CI/CD Pipeline, and Automatic Testing
+
+Reoptinew's deployment process is almost exactly the same for the frontend as with the backend. Since this process is already explained in full detail, we advise you to reference the [frontend repository's documentation](https://github.com/KevinBjarnemark/reoptinew). This includes guides how to set everything up including automatic testing both locally and within the GitHub Actions environment.
+
+If you're new to `Heroku`, `deployment`, `CI/CD pipelines`, and `automatic testing`, we suggest you **start by configuring the frontend repository**. This should familiarize you with this the processes involved. When you feel comfortable deploying the frontend, there are only a few differences to be aware of when deploying the API.
+
+#### Key Differences
+
+The `heruko/python` buildpack, a slightly altered [deploy.yml](.github/workflows/deploy.yml) file tailored to `Python` and some environment variables that needs to be configured. That's about it!
+
+##### heruko/python buildpack
+
+In the frontend we added the `heroku/node.js` buildpack, this is not needed in the API because node is not used. Instead add the `heruko/python` buildpack.
+
+###### CI/CD Pipeline and Automatic Testing
+
+In the [deploy.yml](.github/workflows/deploy.yml) file, there are some differences compared with the frontend repository. While the Heroku deployment is the same, there are some environment differences. 
+
+For starters, instead of testing with `Jest`, we use `pytest`, example below. 
+
+```yml
+- name: Run Django tests
+run: pytest
+env:
+    DJANGO_SETTINGS_MODULE: config.settings
+    # Override DATABASE_URL during tests
+    DATABASE_URL: "sqlite:///:memory:" 
+    DEV_SERVER_HOST: ${{ secrets.DEV_SERVER_HOST }}
+    DEV_SERVER_PORT: ${{ secrets.DEV_SERVER_PORT }}
+    DEV_SERVER_FRONTEND_PORT: ${{ secrets.DEV_SERVER_FRONTEND_PORT }}
+```
+
+If you want to also configure a `Git Hook` to test locally before pushing, you can use a similar pre-push hook, like the one below. Again since we're not using `Node` or `Jest`, the pre-push hook should call `pytest` instead. 
+
+```bash
+#!/bin/bash
+echo "Running tests before pushing..."
+
+# Activate virtual environment for Python
+source venv\Scripts\activate
+
+# Run pytest for Django tests
+pytest
+PYTHON_STATUS=$?
+
+# Check if any tests failed
+if [ $PYTHON_STATUS -ne 0 ]; then
+    echo "Tests failed. Push aborted."
+    exit 1
+else
+    echo "All tests passed! Proceeding with push."
+    exit 0
+fi
+```
+
 ## Credits
 
-    As the only developer working on this project, I will reference myself in first-person and point you to some people, tools, and sources that helped me along the way.
+    As the only developer working on this project, I will reference myself in 
+    first-person and point you to some people, tools, and sources that 
+    helped me along the way.
 
 ### Custom error messages
 
