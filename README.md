@@ -288,6 +288,19 @@ If you're new to `Heroku`, `deployment`, `CI/CD pipelines`, and `automatic testi
 
 The `heruko/python` buildpack, a slightly altered [deploy.yml](.github/workflows/deploy.yml) file tailored to `Python` and some environment variables that needs to be configured. That's about it!
 
+
+##### Environment Variables
+
+At this stage, Heroku is unaware of your environment variables. This is because we've made sure these are kept secure and local, using the [.gitignore](.gitignore) file. Nevertheless, Heruko must have access to some variables such as the `DATABASE_URL` and `CLOUDINARY_URL`.
+> ⚠️ **SECURITY NOTE**  
+> While we've already secured our varibles by excluding them from the repository, it's worth noting that it's not as simple as just adding them to Heroku. We've added a [.env.production.example](.env.production.example) file to exemplify how to configure the variables on Heoku. You may reference this file and compare it to the [.env.example](.env.example) file to see how they differ.
+
+Add the variables to Heroku by following these steps.
+
+- Click on the `Settings` tab.
+- Scroll down and `Reveal Config Vars`
+- Add each environment variable 
+
 ##### heruko/python buildpack
 
 In the frontend we added the `heroku/node.js` buildpack, this is not needed in the API because node is not used. Instead add the `heruko/python` buildpack.
