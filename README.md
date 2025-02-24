@@ -266,7 +266,17 @@ After [cloning or forking the repository](#cloning-and-forking-the-repository) o
 - Configure environment variables
     - The [.env.example](.env.example) file serves as your guide for configuring environment variables. 
 
-After configuring the environment variables, you should be able to run the app with the following command.
+- Apply Migrations
+
+> ⚠️ **NOTE**  
+> This is an important step as it will not only migrate the database but also **auto-populate** many-to-many fields. Users are restricted from editing these so they have to be added manually (or automatically by running `python manage.py migrate`).
+
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+After configuring the environment variables and migrating the database, you should be able to run the app with the following command.
 
 > ⚠️ **NOTE**  
 > Again, to use a specific IP Address like this is a security feature. Never expose this address in the repository. 
