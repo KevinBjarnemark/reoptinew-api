@@ -9,6 +9,7 @@
 - 🛢️ [Databases](#databases)
 - ❌ [Error handling](#error-handling)
 - 🛠️ [Technologies](#technologies)
+- 🔧 [Testing](#testing)
 - 🧬🍴 [Cloning and Forking the Repository](#cloning-and-forking-the-repository)
 - 🏃‍♂️ [Run the App](#run-the-app)
 - ☁️ [Deployment, CI/CD Pipeline, and Automatic Testing](#deployment-cicd-pipeline-and-automatic-testing)
@@ -96,7 +97,6 @@ The [throw_error()](static/utils/error_handling.py) function captures all errors
 ## Technologies
 
 See [requirements.txt](requirements.txt) for the full third party packages list.
-
 
 ### Programming languages
 
@@ -223,6 +223,117 @@ Pytest is a framework used for writing and running tests in Python. It supports 
 **A package for integrating Cloudinary with Django, providing a way to manage media files in the cloud.**
 
 </details>
+
+## Testing
+
+### Manual Testing
+
+
+#### Test cases
+
+Below are some examples of how you can test specific HTTP endpoints in `cmd`. You can also use other tools such as [Postman](https://www.postman.com/) to test HTTP endpoints.
+
+```bash
+# Simple GET request 
+curl -X GET -i http://{DEV_SERVER_HOST}:{DEV_SERVER_PORT}/users/profile/<username>/
+
+# POST request (JSON)
+curl -X POST -i "http://{DEV_SERVER_HOST}:{DEV_SERVER_PORT}/posts/ratings/<post-id>/" ^
+-H "Content-Type: application/json" ^
+-H "Authorization: Bearer <access-token>" ^
+-d "{\"saves_money\": 0, \"saves_time\": 50, \"is_useful\": 100}"
+
+# POST request (FormData)
+curl -X POST "http://{DEV_SERVER_HOST}:{DEV_SERVER_PORT}/users/login/" ^
+-H "Content-Type: multipart/form-data" ^
+--form "username=<username>" ^
+--form "password=<password>" ^
+-i
+```
+
+##### Examples
+
+```bash
+# Create user
+curl -X POST "http://{DEV_SERVER_HOST}:{DEV_SERVER_PORT}/users/signup/" ^
+-H "Content-Type: multipart/form-data" ^
+--form "username=<username>" ^
+--form "password=<password>" ^
+--form "confirm_password=<password>" ^
+--form "birth_date=1995-01-01" ^
+-i
+
+# Log in user
+curl -X POST "http://{DEV_SERVER_HOST}:{DEV_SERVER_PORT}/users/login/" ^
+-H "Content-Type: multipart/form-data" ^
+--form "username=<username>" ^
+--form "password=<password>" ^
+-i
+
+# Fetch all posts
+curl -X GET -i "http://{DEV_SERVER_HOST}:{DEV_SERVER_PORT}/posts/posts/" ^
+-H "Authorization: Bearer <access-token>" ^
+
+# Create post
+curl -X POST "http://{DEV_SERVER_HOST}:{DEV_SERVER_PORT}/posts/posts/" ^
+-H "Content-Type: multipart/form-data" ^
+-H "Authorization: Bearer <access-token>" ^
+--form "action=create" ^
+--form "title=Test Title" ^
+--form "description=Test description" ^
+--form "instructions=Test instructions" ^
+--form "default_image_index=1" ^
+--form "tags=test" ^
+--form "harmful_post=true" ^
+--form "harmful_tool_categories=[\"Sharp or Cutting Tools\"]" ^
+--form "harmful_material_categories=[\"Radioactive Materials\"]" ^
+--form "tools=[{\"quantity\": \"1\", \"name\": \"Screw driver\", \"description\": \"Manual or electric\"}]" ^
+--form "materials=[{\"quantity\": \"10\", \"name\": \"wooden boards\", \"description\": \"Any wood type will do\"}]" ^
+-i
+
+# Rate post
+curl -X POST -i "http://{DEV_SERVER_HOST}:{DEV_SERVER_PORT}/posts/ratings/<post-id>/" ^
+-H "Content-Type: application/json" ^
+-H "Authorization: Bearer <access-token>" ^
+-d "{\"saves_money\": 0, \"saves_time\": 50, \"is_useful\": 100}"
+```
+
+
+> ⚠️ **NOTE**  
+> Make sure your `ip address` is the same as the `DEV_SERVER_HOST` environment variable when testing locally.
+
+> ❕ **Keep In Mind**  
+> 1. Whenever you see the `multipart/form-data` header in any of the test cases below, the data must be  converted into FormData like we just showed you (example above).  
+> 2. Whenever working with user-related endpoints we'll use the username `testUser` and password `securePassword`, you can replace this user if you want. But remember, sometimes the user must exist in order for the endpoint to function as expected.  
+> 3. You should have some knowledge about access and refresh tokens. For example, when logging in a user, you will get the refresh token that can be used throughout the testing process. However, these tokens can expire and change as you call certian endpoints.
+
+##### Users
+
+| **Test Case ID** | **Feature** | **Headers** | **HTTP Method & Endpoint** | **Test Steps** | **Expected Result** | **Actual Result** | **Pass/Fail**
+|------------------|------------|------------|---------------|--------------------|------------------|-------------| ------------|
+| TC-001 | **Sign up** | Content-Type: multipart/form-data | POST /users/api/token/refresh/ | Send a POST request with {"username": testUser", "password": "securePassword", "confirm_password": "securePassword", "birth_date": "1995-01-01"} | HTTP Status: 201 <br> Data: {"message":"Account successfully registered.", "refresh":"{refresh-token}", "access": "{access-token}"} | The server responded with {"message":"Account successfully registered.", "refresh":"{refresh-token}", "access": "{access-token}"} and the HTTP status was 201| ✅ Pass | |
+| TC-002 | **Login** | Content-Type: multipart/form-data | POST users/login/ | Send a POST request with { "username": "testUser", "password": "securePassword" } | HTTP status: 201 <br> Data: {"message": "Login successful.", "refresh": "{refresh-token}", "access": "{access-token}"} | The server responded with {"message": "Login successful.", "refresh": "{refresh-token}", "access": "{access-token}"} and the HTTP status was 201 | ✅ Pass | |
+| TC-003 | **Logout** | Content-Type: application/json <br> Authorization: Bearer {access-token} | POST users/logout/ | Send a POST request as a logged in user | HTTP Status: 200 <br> Data: {"message":"Successfully logged out."} | The server responded with {"message":"Successfully logged out."} and the HTTP status was 200| ✅ Pass | |
+| TC-004 | **Get user's profile** | | GET /users/profile/testUser/ | Send a GET request | HTTP Status: 200 <br> Data: {"id": {profile-id} ,"user_id": {user-id}, "image": "{image-url}", "username": "testUser","followers": [],"following": []} | The server responded with{"id": {profile-id} ,"user_id": {user-id}, "image": "{image-url}", "username": "testUser","followers": [],"following": []}  and the HTTP status was 200| ✅ Pass | |
+| TC-005 | **Refresh Token** | Content-Type: application/json | POST /users/api/token/refresh/ | Send a POST request with {"refresh": "{refresh-token}"} | HTTP Status: 200 <br> Data: {"refresh": "{refreshed-token}", access: "{updated-access-token}"} | The server responded with {"refresh": "{refreshed-token}", access: "{updated-access-token}"} and the HTTP status was 200| ✅ Pass | |
+| TC-006 | **Create Post** | Content-Type: multipart/form-data <br> Authorization: Bearer {access-token} | POST /posts/posts/ | Send a POST request with { "action": "create", "title": "Test Title", "description": "Test description", "instructions": "Test instructions", "default_image_index": 1, "tags": "test", "harmful_post": true, "harmful_tool_categories": ["Sharp or Cutting Tools"], "harmful_material_categories": ["Radioactive Materials"], "tools": [{"quantity": "1","name": "Screw driver","description": "Manual or electric"}], "materials": [{"quantity": "10","name": "wooden boards","description": "Any wood type will do"}]} | HTTP Status: 201 <br> Data: {"id": "{post-id}", "title": "Test Title", "description": "Test description", "instructions": "Test instructions", "created_at":"{creation-date}","author":{"id": "{user-id}", "username": "testUser", "image":"{image-url}"}, "default_image_index": 1, "harmful_post":true, "tags": "test", "image":null, "ratings": {"saves_money":0, "saves_time": 0, "is_useful": 0},"comments": [], "harmful_tool_categories": ["Sharp or Cutting Tools"], "harmful_material_categories": ["Radioactive Materials"], "tools": [{"quantity": "1", "name": "Screw driver", "description": "Manual or electric"}], "materials":[{"quantity": "10", "name": "wooden boards", "description": "Any wood type will do"}], "likes":{"user_has_liked": false, "count": 0}} | The server responded with {"id": "{post-id}", "title": "Test Title", "description": "Test description", "instructions": "Test instructions", "created_at":"{creation-date}","author":{"id": "{user-id}", "username": "testUser", "image":"{image-url}"}, "default_image_index": 1, "harmful_post":true, "tags": "test", "image":null, "ratings": {"saves_money":0, "saves_time": 0, "is_useful": 0},"comments": [], "harmful_tool_categories": ["Sharp or Cutting Tools"], "harmful_material_categories": ["Radioactive Materials"], "tools": [{"quantity": "1", "name": "Screw driver", "description": "Manual or electric"}], "materials":[{"quantity": "10", "name": "wooden boards", "description": "Any wood type will do"}], "likes":{"user_has_liked": false, "count": 0}} and the HTTP status was 201| ✅ Pass | |
+| TC-007 | **Delete Post** | Authorization: Bearer {access-token} | DELETE /posts/post/delete-post/{post-id}/ | Send a DELETE request | HTTP Status: 200 <br> Data: {"message":"Deleted post successfully."} | The server responded with {"message":"Deleted post successfully."} and the HTTP status was 200| ✅ Pass | |
+| TC-008 | **Rate Post** | Content-Type: application/json <br> Authorization: Bearer {access-token} | POST posts/ratings/{post-id}/ | Send a POST request with {"saves_money": 0, "saves_time": 50, "is_useful": 100} | HTTP Status: 201 <br> Data: {"message":"Rating submitted successfully!","ratings":{"saves_money":0,"saves_time":50,"is_useful":100}} | The server responded with {"message":"Rating submitted successfully!","ratings":{"saves_money":0,"saves_time":50,"is_useful":100}} and the HTTP status was 201| ✅ Pass | |
+| TC-009 | **Rate Post (restriction)** | Content-Type: application/json <br> Authorization: Bearer {access-token} | POST posts/ratings/{post-id}/ | Send a POST request to a post owned by the current user with {"saves_money": 0, "saves_time": 50, "is_useful": 100} | HTTP Status: 403 <br> Data: {"error_message":"You cannot rate your own post."} | The server responded with {"error_message":"You cannot rate your own post."} and the HTTP status was 403| ✅ Pass | |
+| TC-010 | **Comment on Post** | Content-Type: application/json <br> Authorization: Bearer {access-token} | POST posts/comments/{post-id}/ | Send a POST request with {"text": "Test comment"} | HTTP Status: 201 <br> Data: {"id":{comment-id},"post":{post-id},"user":{user-id},"text":"Test comment","created_at": {creation-date}} | The server responded with {"id":{comment-id},"post":{post-id},"user":{user-id},"text":"Test comment","created_at": {creation-date}} and the HTTP status was 201| ✅ Pass | |
+| TC-011 | **Like Post** | Content-Type: Authorization: Bearer {access-token} | POST posts/like/{post-id}/ | Send a POST request | HTTP Status: 201 <br> Data: {"message":"Post liked successfully!","id":{like-id}} | The server responded with {"message":"Post liked successfully!","id":{like-id}} and the HTTP status was 201| ✅ Pass | |
+| TC-012 | **Like Post (already liked)** | Authorization: Bearer {access-token} | POST posts/like/{post-id}/ | Send a POST request to an already liked post | HTTP Status: 400 <br> Data: {"error_message":"You have already liked this post"} | The server responded with {"error_message":"You have already liked this post"} and the HTTP status was 400| ✅ Pass | |
+| TC-013 | **Delete Like** | Authorization: Bearer {access-token} | DELETE posts/like/{post-id}/ | Send a DELETE request | HTTP Status: 200 <br> Data: {"message":"Like removed successfully!","post_id":164} | The server responded with {"message":"Like removed successfully!","post_id":164} and the HTTP status was 200| ✅ Pass | |
+| TC-014 | **Delete Like (doesn't exist)** | Authorization: Bearer {access-token} | DELETE posts/like/{post-id}/ | Send a DELETE request for a like that doesn't exist | HTTP Status: 500 <br> Data: {"error_message":"Couldn't find like, nothing to remove."} | The server responded with {"error_message":"Couldn't find like, nothing to remove."} and the HTTP status was 500| ✅ Pass | |
+| TC-015 | **Fetch All Posts** | Authorization: Bearer {access-token} | GET posts/posts/ | Send a GET request | HTTP Status: 200 <br> Data: [{id, title, description, instructions, created_at, author: {id, username, image}, default_image_index, harmful_post, tags, image, ratings: {saves_money, saves_time, is_useful}, comments: [{id, text, created_at, author: {id, username, image}}], harmful_tool_categories:[], harmful_material_categories:[], tools: [], materials :[],likes: {user_has_liked, count}}] | The server responded with [{id, title, description, instructions, created_at, author: {id, username, image}, default_image_index, harmful_post, tags, image, ratings: {saves_money, saves_time, is_useful}, comments: [{id, text, created_at, author: {id, username, image}}], harmful_tool_categories:[], harmful_material_categories:[], tools: [], materials :[],likes: {user_has_liked, count}}] and the HTTP status was 200| ✅ Pass | |
+| TC-016 | **Fetch Single Post** | Authorization: Bearer {access-token} | GET posts/posts/{post-id}/ | Send a GET request | HTTP Status: 200 <br> Data: {id, title, description, instructions, created_at, author: {id, username, image}, default_image_index, harmful_post, tags, image, ratings: {saves_money, saves_time, is_useful}, comments: [{id, text, created_at, author: {id, username, image}}], harmful_tool_categories:[], harmful_material_categories:[], tools: [], materials :[],likes: {user_has_liked, count}} | The server responded with {id, title, description, instructions, created_at, author: {id, username, image}, default_image_index, harmful_post, tags, image, ratings: {saves_money, saves_time, is_useful}, comments: [{id, text, created_at, author: {id, username, image}}], harmful_tool_categories:[], harmful_material_categories:[], tools: [], materials :[],likes: {user_has_liked, count}} and the HTTP status was 200| ✅ Pass | |
+| TC-017 | **Fetch Single Post (age-restricted user)** | Authorization: Bearer {access-token} | GET posts/posts/{post-id}/ | Send a GET request for a post that is age-restricted as a user under 16 years old | HTTP Status: 400 <br> Data: {"error_message":"You must be at least 16 years old to create, edit, and view a post that is considered to be inappropriate for children."} | The server responded with {"error_message":"You must be at least 16 years old to create, edit, and view a post that is considered to be inappropriate for children."} and the HTTP status was 400| ✅ Pass | |
+| TC-018 | **Fetch Single Post (age-restricted guest)** |  | GET posts/posts/{post-id}/ | Send a GET request for a post that is age-restricted as a guest | HTTP Status: 400 <br> Data: {"error_message":"You must be at least 16 years old to create, edit, and view a post that is considered to be inappropriate for children."} | The server responded with {"error_message":"You must be at least 16 years old to create, edit, and view a post that is considered to be inappropriate for children."} and the HTTP status was 400| ✅ Pass | |
+| TC-019 | **Follow** | Authorization: Bearer {access-token} | POST users/follow/{user-id}/ | Send a POST request | HTTP Status: 201 <br> Data: {"message":"Followed successfully!","id": {user-id}} | The server responded with {"message":"Followed successfully!","id":{user-id}} and the HTTP status was 201| ✅ Pass | |
+| TC-020 | **Unfollow** | Authorization: Bearer {access-token} | DELETE users/follow/{user-id}/ | Send a DELETE request | HTTP Status: 201 <br> Data: {"message":"Unfollowed successfully!"} | The server responded with {"message":"Unfollowed successfully!"} and the HTTP status was 201| ✅ Pass | |
+| TC-021 | **Unfollow as a guest** | | DELETE users/follow/{user-id}/ | Send a DELETE request but as a guest | HTTP Status: 401 <br> Data: {"detail":"Authentication credentials were not provided."} | The server responded with {"detail":"Authentication credentials were not provided."} and the HTTP status was 401| ✅ Pass | |
+| TC-001 | **Follow as a guest** | | POST users/follow/{user-id}/ | Send a POST request but as a guest | HTTP Status: 401 <br> Data: {"detail":"Authentication credentials were not provided."} | The server responded with {"detail":"Authentication credentials were not provided."} and the HTTP status was 401| ✅ Pass | |
+| TC-022 | **Follow Yourself** | Authorization: Bearer {access-token} | POST users/follow/{user-id}/ | Send a POST request but with the currently logged in user's id | HTTP Status: 400 <br> Data: {"error_message":"You cannot follow yourself."} | The server responded with {"error_message":"You cannot follow yourself."} and the HTTP status was 400| ✅ Pass | |
 
 ## Cloning and Forking the Repository
 
